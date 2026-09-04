@@ -13,19 +13,22 @@
 #
 # GLASS only: the Uchuu mocks are ~40 GB and deliberately not staged.
 #
-#   oarsub --project <proj> -S "./oarsub/run_simtests.sh <tag> <seeds_per_task>"
+#   oarsub --project <proj> -S "./oarsub/run_simtests.sh <tag> <seeds_per_task> [offset]"
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source oarsub/_campaign_env.sh
 
 TAG="${1:-${OAR_ARRAY_ID:-local}}"
 SPT="${2:-2}"
+# Offset into the 75-element cell list, so F can be submitted in chunks that fit
+# the queue.  $OAR_ARRAY_INDEX restarts at 1 for every chunk.
+OFF="${3:-0}"
 campaign_activate_env
 campaign_threads >/dev/null
 
 NSIDES=(32 64 128)
 CHUNKS=25
-IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 ))
+IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 + OFF ))
 NSIDE="${NSIDES[$(( IDX / CHUNKS ))]}"
 CHUNK=$(( IDX % CHUNKS ))
 
