@@ -13,10 +13,26 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source oarsub/_campaign_env.sh
 PROJECT="$(campaign_project)"
-mkdir -p oarsub/logs "${SMB_RESULTS}"
+REPO_LOGS="$(pwd)/oarsub/logs"
+mkdir -p "${REPO_LOGS}" "${SMB_RESULTS}"
 
 TAG="${1:?usage: submit_campaign.sh <tag> <family...>}"; shift
 [ $# -gt 0 ] || { echo "!! no family given (A B C D E F)"; exit 1; }
+
+# Submit from an immutable per-tag snapshot of oarsub/, never from the working
+# tree.  bash reads a job script incrementally, so editing a run_*.sh while its
+# job is running makes the job resume at a stale offset -- in practice it dies
+# with "error reading input file: Stale file handle", which is exactly how the
+# first pass of family B was lost.  A snapshot also records what a given tag
+# actually ran, which the working tree stops being the moment anything changes.
+SNAP="${WORK}/campaigns/${TAG}"
+mkdir -p "${SNAP}"
+rsync -a --delete --exclude logs oarsub/ "${SNAP}/oarsub/"
+ln -sfn "${REPO_LOGS}" "${SNAP}/oarsub/logs"
+rsync -a --exclude '.git' --exclude '__pycache__' --exclude 'oarsub' \
+      --exclude 'results' ./ "${SNAP}/" 2>/dev/null || true
+echo "== snapshot: ${SNAP}"
+cd "${SNAP}"
 
 # GRICAD refuses any submission that would leave more than 100 jobs waiting.
 # Ask how much room there is rather than finding out from a rejection.
