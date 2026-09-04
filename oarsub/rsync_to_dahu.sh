@@ -12,18 +12,38 @@ PKG_LOCAL="${PKG_LOCAL:-$HOME/software/sys_mapping}"
 DATA_LOCAL="${DATA_LOCAL:-$HOME/data/legacysurvey/dr10}"
 
 DRY=""; [ "${1:-}" = "--dry-run" ] && { DRY="-n"; shift; }
+
+# rsync exits 12/23/30/255 on a dropped connection.  Each retry resumes from the
+# partial file, so N attempts finish a transfer one attempt cannot.
+rs () {
+    local try
+    for try in 1 2 3 4 5; do
+        if "${R[@]}" "$@"; then return 0; fi
+        echo "-- attempt ${try} failed (rsync $?); resuming in 10 s" >&2
+        sleep 10
+    done
+    echo "!! transfer failed after 5 attempts: $*" >&2
+    return 1
+}
 WHAT="${1:-all}"
-R=(rsync -avz --mkpath ${DRY} --exclude '.git' --exclude '__pycache__'
+# --partial + --append-verify make a dropped connection resumable: the
+# 2.4 GB tier-2 push through the gateway does not survive in one piece, and
+# without these a retry restarts every file from zero.  ServerAlive* keeps the
+# ssh channel from being reaped while rsync is checksumming a large file.
+RSH="ssh -o ServerAliveInterval=20 -o ServerAliveCountMax=6 -o TCPKeepAlive=yes"
+R=(rsync -avz --mkpath ${DRY} --rsh="${RSH}" --timeout=300
+   --partial --append-verify
+   --exclude '.git' --exclude '__pycache__'
    --exclude '*.pyc' --exclude '*.egg-info' --exclude 'oarsub/logs/*'
    --exclude '.claude' --exclude '.pytest_cache' --exclude '.coverage'
    --exclude 'dist' --exclude 'dist_*' --exclude '*.ipynb_checkpoints')
 
 if [ "$WHAT" = all ] || [ "$WHAT" = code ]; then
   echo "== code: benchmark repo -> ${HOST}:${BENCH_REMOTE}"
-  "${R[@]}" --exclude 'results/*' ./ "${HOST}:${BENCH_REMOTE}/"
+  rs --exclude 'results/*' ./ "${HOST}:${BENCH_REMOTE}/"
   echo "== code: sys_mapping package -> ${HOST}:${PKG_REMOTE}"
   # The package only: its data/ and results/ are outputs and are regenerable.
-  "${R[@]}" --exclude 'data/*' --exclude 'results/*' --exclude 'docs/_build' \
+  rs --exclude 'data/*' --exclude 'results/*' --exclude 'docs/_build' \
             --exclude 'logs/*' "${PKG_LOCAL}/" "${HOST}:${PKG_REMOTE}/"
 fi
 
@@ -31,31 +51,31 @@ fi
 # timing harness (which reads nothing).
 if [ "$WHAT" = all ] || [ "$WHAT" = tier0 ]; then
   echo "== tier0: templates 32/64 + params/summaries/sweeps (~7.7 MB)"
-  "${R[@]}" "${DATA_LOCAL}/systematics/0032/" "${HOST}:${DATA_REMOTE}/systematics/0032/"
-  "${R[@]}" "${DATA_LOCAL}/systematics/0064/" "${HOST}:${DATA_REMOTE}/systematics/0064/"
-  "${R[@]}" --include '*/' --include '*_params.json' --exclude '*' \
+  rs "${DATA_LOCAL}/systematics/0032/" "${HOST}:${DATA_REMOTE}/systematics/0032/"
+  rs "${DATA_LOCAL}/systematics/0064/" "${HOST}:${DATA_REMOTE}/systematics/0064/"
+  rs --include '*/' --include '*_params.json' --exclude '*' \
         "${PKG_LOCAL}/data/sys_weights/" "${HOST}:${PKG_REMOTE}/data/sys_weights/"
-  "${R[@]}" --include '*/' --include 'results_summary.json' --exclude '*' \
+  rs --include '*/' --include 'results_summary.json' --exclude '*' \
         "${PKG_LOCAL}/data/simulations/" "${HOST}:${PKG_REMOTE}/data/simulations/"
-  "${R[@]}" --include 'detectability_sweep_*.csv' --exclude '*' \
+  rs --include 'detectability_sweep_*.csv' --exclude '*' \
         "${PKG_LOCAL}/results/" "${HOST}:${PKG_REMOTE}/results/"
 fi
 
 # Tier 1 -- +84 MB.  Unlocks NSIDE 128/256 for cross-terms and variance.
 if [ "$WHAT" = all ] || [ "$WHAT" = tier1 ]; then
   echo "== tier1: templates 128/256 (~84 MB)"
-  "${R[@]}" "${DATA_LOCAL}/systematics/0128/" "${HOST}:${DATA_REMOTE}/systematics/0128/"
-  "${R[@]}" "${DATA_LOCAL}/systematics/0256/" "${HOST}:${DATA_REMOTE}/systematics/0256/"
+  rs "${DATA_LOCAL}/systematics/0128/" "${HOST}:${DATA_REMOTE}/systematics/0128/"
+  rs "${DATA_LOCAL}/systematics/0256/" "${HOST}:${DATA_REMOTE}/systematics/0256/"
 fi
 
 # Tier 2 -- +2.4 GB.  Only the LRT needs these.  Deliberately NOT the
 # HPX_*-JK100 subdirs or the wprp FITS: nothing in this campaign reads them.
 if [ "$WHAT" = all ] || [ "$WHAT" = tier2 ]; then
   echo "== tier2: LS10 DATA/RAND catalogues (~2.4 GB)"
-  "${R[@]}" --include '*_DATA.fits' --include '*_RAND.fits' --exclude '*' \
+  rs --include '*_DATA.fits' --include '*_RAND.fits' --exclude '*' \
         "${DATA_LOCAL}/sweep/BGS_VLIM_Mstar/" "${HOST}:${DATA_REMOTE}/sweep/BGS_VLIM_Mstar/"
   echo "== tier2: existing mock-LRT params.json (for --resume-null, ~144 KB)"
-  "${R[@]}" --include '*/' --include '*_params.json' --exclude '*' \
+  rs --include '*/' --include '*_params.json' --exclude '*' \
         "${PKG_LOCAL}/results/ls10_mocklrt/" "${HOST}:${PKG_REMOTE}/results/ls10_mocklrt/"
 fi
 
