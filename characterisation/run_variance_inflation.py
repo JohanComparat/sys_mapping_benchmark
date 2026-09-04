@@ -173,6 +173,11 @@ def main():
     ap.add_argument("--cl-slopes", type=float, nargs="+", default=[2.0],
                     help="power-law indices of C_l ~ (l+1)^-slope to scan")
     ap.add_argument("--seed", type=int, default=1234)
+    ap.add_argument("--tag", default=None,
+                    help="Run tag. Outputs go to <out-dir>/<tag>/ so a narrow scan can "
+                         "never overwrite a wide grid -- which is exactly how the "
+                         "original 20-cell (nside x n_sys) grid was lost. Defaults to a "
+                         "descriptive tag built from the grid itself.")
     ap.add_argument("--out-dir", type=Path, default=OUT)
     a = ap.parse_args()
 
@@ -180,7 +185,17 @@ def main():
     n_sys_grid = a.n_sys or ([3, 11] if a.quick else [1, 3, 5, 8, 11])
     n_real = a.n_real or (40 if a.quick else 200)
 
+    # Run-tagged output directory.  Without this, two runs with different grids write
+    # the same filename and the second silently destroys the first.
+    tag = a.tag or (
+        "ns" + "-".join(str(n) for n in nsides)
+        + "_k" + "-".join(str(k) for k in n_sys_grid)
+        + "_slope" + "-".join(f"{s:g}" for s in a.cl_slopes)
+        + f"_n{n_real}"
+    )
+    a.out_dir = a.out_dir / tag
     a.out_dir.mkdir(parents=True, exist_ok=True)
+    print(f"run tag: {tag}")
     rows = []
     print(f"variance inflation: nside={nsides} n_sys={n_sys_grid} n_real={n_real} "
           f"nbar={a.n_mean} sigma_clus={a.sigma_clus}\n")
@@ -198,7 +213,11 @@ def main():
                           f"{r['kappa_per_template_median']:>12.2f}"
                           f"{r['kappa_field']:>13.2f}{r['fpr3_any_template']*100:>10.1f}%")
 
-    (a.out_dir / "variance_inflation.json").write_text(json.dumps(rows, indent=2))
+    (a.out_dir / "variance_inflation.json").write_text(json.dumps(
+        {"grid": {"nsides": nsides, "n_sys": n_sys_grid, "n_real": n_real,
+                  "cl_slopes": a.cl_slopes, "n_mean": a.n_mean,
+                  "sigma_clus": a.sigma_clus, "seed": a.seed, "tag": tag},
+         "rows": rows}, indent=2))
     import csv
     keys = [k for k in rows[0] if k != "kappa_per_template"]
     with (a.out_dir / "variance_inflation.csv").open("w", newline="") as fh:

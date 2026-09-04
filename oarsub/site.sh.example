@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Site configuration -- copy to `oarsub/site.sh` and fill in.
+#
+#   cp oarsub/site.sh.example oarsub/site.sh && $EDITOR oarsub/site.sh
+#
+# `oarsub/site.sh` is git-ignored.  Nothing that identifies an account, an
+# allocation or a host belongs anywhere else in this repository.
+# =============================================================================
+
+# OAR allocation charged for the job (`oarsub --project`).  Required: the
+# scripts refuse to submit without it rather than guessing.
+export SMB_PROJECT="your-oar-project"
+
+# Login used by rsync_to_dahu.sh / pull_results.sh, which run on your own
+# machine.  A ~/.ssh/config Host alias is the better answer -- then no login
+# name appears here either.
+export SMB_SSH_HOST="your-login@dahu.ciment"
+
+# Conda/mamba environment carrying jax, healpy, blackjax, emcee, glass, sklearn.
+# export SMB_ENV="sys_map"
+
+# Scratch on the cluster.  On the cluster this defaults to
+# /bettik/PROJECTS/$SMB_PROJECT/$USER/sys_mapping_benchmark.  pull_results.sh
+# runs on your machine, where $USER is not the cluster login -- spell it out.
+# export SMB_WORK="/bettik/PROJECTS/your-oar-project/your-login/sys_mapping_benchmark"
+
+# Checkouts on the cluster, relative to the remote login home.
+# export SMB_REPO_REMOTE="software/sys_mapping_benchmark"
+# export SMB_PKG_REMOTE="software/sys_mapping"
+
+# Where the staged input data lands on the cluster (Tier 0-2 of the rsync).
+# export SMB_DATA_REMOTE="data/legacysurvey/dr10"
