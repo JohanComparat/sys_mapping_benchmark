@@ -26,13 +26,20 @@ rs () {
     return 1
 }
 WHAT="${1:-all}"
-# --partial + --append-verify make a dropped connection resumable: the
+APPEND=()
+# --partial makes a dropped connection resumable; --append-verify (added for the
+# tier-2 catalogues only, via APPEND below) resumes a large file from its current
+# size instead of restarting it.  It is deliberately NOT used for the code push:
+# source files change in place, so appending is meaningless there and rsync
+# rightly warns on every changed file.
+#
+# The 2.4 GB tier-2 push through the gateway does not survive in one piece: the
 # 2.4 GB tier-2 push through the gateway does not survive in one piece, and
 # without these a retry restarts every file from zero.  ServerAlive* keeps the
 # ssh channel from being reaped while rsync is checksumming a large file.
 RSH="ssh -o ServerAliveInterval=20 -o ServerAliveCountMax=6 -o TCPKeepAlive=yes"
 R=(rsync -avz --mkpath ${DRY} --rsh="${RSH}" --timeout=300
-   --partial --append-verify
+   --partial
    --exclude '.git' --exclude '__pycache__'
    --exclude '*.pyc' --exclude '*.egg-info' --exclude 'oarsub/logs/*'
    --exclude '.claude' --exclude '.pytest_cache' --exclude '.coverage'
@@ -71,9 +78,11 @@ fi
 # Tier 2 -- +2.4 GB.  Only the LRT needs these.  Deliberately NOT the
 # HPX_*-JK100 subdirs or the wprp FITS: nothing in this campaign reads them.
 if [ "$WHAT" = all ] || [ "$WHAT" = tier2 ]; then
+  APPEND=(--append-verify)          # large, immutable: resume rather than restart
   echo "== tier2: LS10 DATA/RAND catalogues (~2.4 GB)"
   rs --include '*_DATA.fits' --include '*_RAND.fits' --exclude '*' \
-        "${DATA_LOCAL}/sweep/BGS_VLIM_Mstar/" "${HOST}:${DATA_REMOTE}/sweep/BGS_VLIM_Mstar/"
+        "${APPEND[@]}" "${DATA_LOCAL}/sweep/BGS_VLIM_Mstar/" \
+        "${HOST}:${DATA_REMOTE}/sweep/BGS_VLIM_Mstar/"
   echo "== tier2: existing mock-LRT params.json (for --resume-null, ~144 KB)"
   rs --include '*/' --include '*_params.json' --exclude '*' \
         "${PKG_LOCAL}/results/ls10_mocklrt/" "${HOST}:${PKG_REMOTE}/results/ls10_mocklrt/"
