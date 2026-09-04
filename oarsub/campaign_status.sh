@@ -33,18 +33,21 @@ B) echo "== B  GLASS calibration  (expect 36 cells x 5 seeds)"
    python - "${R}" <<'PYEOF' || true
 import json, pathlib, statistics, sys
 root = pathlib.Path(sys.argv[1])
-vals = []
+vals, unconverged = [], []
 for p in root.rglob("glass_calibration.json"):
     d = json.load(p.open())
-    for k in ("cl_amplitude", "cl_amplitude_fit", "amplitude"):
-        v = (d.get("fit") or d).get(k) if isinstance(d.get("fit"), dict) else d.get(k)
-        if isinstance(v, (int, float)):
-            vals.append(v); break
+    fit = d.get("fit") or {}
+    if fit.get("converged") and isinstance(fit.get("cl_amplitude"), (int, float)):
+        vals.append(fit["cl_amplitude"])
+    else:
+        unconverged.append(str(p.parent.relative_to(root)))
 if vals:
     m = statistics.median(vals)
     sd = statistics.stdev(vals) if len(vals) > 1 else 0.0
     print(f"   cl_amplitude over {len(vals)} runs: median {m:.4g}  sd {sd:.3g}")
     print(f"   -> submit_campaign.sh <tag> E {m:.4g}")
+if unconverged:
+    print(f"   {len(unconverged)} run(s) did NOT converge, e.g. {unconverged[0]}")
 PYEOF
    ;;
 C) echo "== C  variance cube  (expect 20 elements)"
