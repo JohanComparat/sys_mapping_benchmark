@@ -51,7 +51,7 @@ while [ $# -gt 0 ]; do
   case "${fam}" in
     A) echo "== A  environment build (1 job, core=16, 3 h)"
        sub "./oarsub/build_env.sh" ;;
-    B) echo "== B  GLASS calibration (array 36, core=4, 2 h)"
+    B) echo "== B  GLASS calibration (1 job, 36 cells x 5 seeds, core=4, 3 h)"
        sub "./oarsub/run_glass.sh ${TAG} 5" ;;
     C) echo "== C  variance cube (array 20 x 5 n_sys = 100 cells, core=4, 4 h)"
        sub "./oarsub/run_variance.sh ${TAG} 2000" ;;

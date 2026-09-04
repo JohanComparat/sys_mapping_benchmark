@@ -72,6 +72,13 @@ def main():
     ap.add_argument("--z-range", type=float, nargs=2, default=[0.05, 0.18])
     ap.add_argument("--scan", type=float, nargs="+", default=None,
                     help="cl_amplitude values to try (default: just the package default)")
+    ap.add_argument("--fit", action="store_true",
+                    help="root-find the cl_amplitude matching sigma_hat_data, "
+                         "instead of only evaluating --scan")
+    ap.add_argument("--fit-iters", type=int, default=4,
+                    help="refinement steps for --fit (each costs one mock)")
+    ap.add_argument("--fit-tol", type=float, default=0.02,
+                    help="stop once |clustering ratio - 1| is below this")
     ap.add_argument("--seed", type=int, default=11)
     ap.add_argument("--out-dir", type=Path, default=OUT)
     a = ap.parse_args()
@@ -86,11 +93,11 @@ def main():
     print(f"      sigma_hat={a.sigma_hat_data:.4f}  shot={1/nbar_data:.5f}  "
           f"-> sigma_clus={sclus_data:.4f}\n")
 
-    amps = a.scan or [5e-4]
     rows = []
     print(f"{'cl_amplitude':>14}{'nbar':>9}{'sigma_hat':>11}{'sigma_clus':>12}"
           f"{'clus ratio':>12}")
-    for amp in amps:
+
+    def probe(amp):
         r = measure(a.nside, n_total, np.array(a.z_range),
                     np.array([float(a.n_gal)]), amp, a.seed)
         r["sigma_clus_data"] = sclus_data
@@ -98,18 +105,60 @@ def main():
         rows.append(r)
         print(f"{amp:>14.2e}{r['nbar']:>9.2f}{r['sigma_hat']:>11.4f}"
               f"{r['sigma_clus']:>12.4f}{r['clustering_ratio']:>11.2f}x")
+        return r
+
+    converged = None
+    if a.fit:
+        # sigma_clus is very nearly C * amp^(1/2), so work in log-log: two probes
+        # determine the local slope exactly and the third lands on the target.
+        # A fixed --scan cannot do this -- the required amplitude varies by an
+        # order of magnitude across the nine samples, so any grid wide enough to
+        # bracket them all is too coarse to be a fit.
+        amp = (a.scan or [5e-4])[0]
+        r0 = probe(amp)
+        prev = None
+        for _ in range(max(a.fit_iters, 1)):
+            if not np.isfinite(r0["clustering_ratio"]) or r0["clustering_ratio"] <= 0:
+                print("  -> mock has no measurable clustering; cannot fit")
+                break
+            if abs(r0["clustering_ratio"] - 1.0) <= a.fit_tol:
+                converged = r0
+                break
+            if prev is None or prev["sigma_clus"] <= 0 or \
+               abs(np.log(r0["cl_amplitude"] / prev["cl_amplitude"])) < 1e-12:
+                slope = 0.5                                  # sqrt scaling
+            else:
+                slope = (np.log(r0["sigma_clus"] / prev["sigma_clus"])
+                         / np.log(r0["cl_amplitude"] / prev["cl_amplitude"]))
+                if not np.isfinite(slope) or slope <= 0.05:
+                    slope = 0.5
+            amp_new = r0["cl_amplitude"] * (1.0 / r0["clustering_ratio"]) ** (1.0 / slope)
+            amp_new = float(np.clip(amp_new, 1e-8, 1.0))
+            prev, r0 = r0, probe(amp_new)
+        if converged is None and abs(r0["clustering_ratio"] - 1.0) <= a.fit_tol:
+            converged = r0
+    else:
+        for amp in (a.scan or [5e-4]):
+            probe(amp)
 
     best = min(rows, key=lambda r: abs(r["clustering_ratio"] - 1.0))
     print(f"\nclosest match: cl_amplitude={best['cl_amplitude']:.3e} "
           f"(clustering ratio {best['clustering_ratio']:.2f})")
     if abs(best["clustering_ratio"] - 1.0) > 0.1:
-        print("  -> still not matched; widen the scan")
+        print("  -> still not matched; widen the scan or raise --fit-iters")
 
     (a.out_dir / "glass_calibration.json").write_text(
         json.dumps({"data": {"nside": a.nside, "n_gal": a.n_gal, "fsky": a.fsky,
                              "nbar": nbar_data, "sigma_hat": a.sigma_hat_data,
                              "sigma_clus": sclus_data},
-                    "mocks": rows}, indent=2))
+                    "mocks": rows,
+                    "fit": {"requested": bool(a.fit),
+                            "converged": converged is not None,
+                            "tol": a.fit_tol,
+                            "n_probes": len(rows),
+                            "cl_amplitude": best["cl_amplitude"],
+                            "clustering_ratio": best["clustering_ratio"],
+                            "sigma_hat_mock": best["sigma_hat"]}}, indent=2))
     print(f"\n-> {a.out_dir/'glass_calibration.json'}")
 
 
