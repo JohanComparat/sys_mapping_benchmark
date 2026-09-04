@@ -34,10 +34,15 @@ NN=${#SMB_NSIDES[@]}
 NCELL=$(( ${#SMB_SAMPLES[@]} * NN ))
 FIRST="${3:-0}"
 LAST="${4:-$(( NCELL - 1 ))}"
-# Honour an array submission if one is used anyway.
-if [ -n "${OAR_ARRAY_INDEX:-}" ] && [ "${OAR_ARRAY_INDEX}" -gt 0 ] 2>/dev/null \
-   && [ -z "${3:-}" ] && [ "${OAR_ARRAY_SIZE:-1}" -gt 1 ]; then
+# Honour an array submission if one is used anyway.  OAR_ARRAY_SIZE does NOT
+# exist on this build -- a plain job and an array element look identical apart
+# from the index -- so the caller states the range explicitly and only a caller
+# that gives none is treated as an array element.  Without this every element of
+# a 36-wide array ran all 36 cells into the same output paths at once.
+if [ -z "${3:-}" ] && [ -n "${OAR_ARRAY_INDEX:-}" ] \
+   && [ "${OAR_ARRAY_INDEX}" -gt 0 ] 2>/dev/null; then
     FIRST=$(( OAR_ARRAY_INDEX - 1 )); LAST="${FIRST}"
+    echo "-- no explicit range: treating OAR_ARRAY_INDEX=${OAR_ARRAY_INDEX} as one cell"
 fi
 echo "== cells ${FIRST}..${LAST} of ${NCELL}, ${NSEEDS} seeds each"
 

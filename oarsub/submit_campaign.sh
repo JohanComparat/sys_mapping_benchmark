@@ -68,7 +68,7 @@ while [ $# -gt 0 ]; do
     A) echo "== A  environment build (1 job, core=16, 3 h)"
        sub "./oarsub/build_env.sh" ;;
     B) echo "== B  GLASS calibration (1 job, 36 cells x 5 seeds, core=4, 3 h)"
-       sub "./oarsub/run_glass.sh ${TAG} 5" ;;
+       sub "./oarsub/run_glass.sh ${TAG} 5 0 35" ;;
     C) echo "== C  variance cube (array 20 x 5 n_sys = 100 cells, core=4, 4 h)"
        sub "./oarsub/run_variance.sh ${TAG} 2000" ;;
     D) echo "== D  benchmark grid (1 job, cpumodel-pinned, core=8, 12 h)"
