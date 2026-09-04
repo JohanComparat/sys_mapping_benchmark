@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sys-mapping-benchmark"
+version = "0.1.0"
+description = "Timing benchmarks and algorithm characterisation for the sys_mapping pipeline"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [{name = "Johan Comparat", email = "jcomparat@lpsc.in2p3.fr"}]
+keywords = ["astronomy", "galaxy clustering", "systematic effects", "benchmark"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+dependencies = [
+    "sys-mapping>=1.2",
+    "numpy",
+    "scipy",
+    "healpy",
+    "matplotlib",
+    "joblib",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "scikit-learn>=1.3"]
+glass = ["glass>=2026.1"]
+
+[project.urls]
+Homepage = "https://github.com/JohanComparat/sys_mapping_benchmark"
+Package = "https://github.com/JohanComparat/sys_mapping"
+
+[tool.pytest.ini_options]
+testpaths = ["benchmark"]
+addopts = "-v"
+markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
