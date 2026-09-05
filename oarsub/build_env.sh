@@ -36,7 +36,9 @@ mamba install -y -c conda-forge numpy scipy astropy healpy matplotlib scikit-lea
 
 PKG="${SMB_PKG}"
 [ -d "${PKG}" ] || { echo "!! sys_mapping checkout not found at ${PKG}"; exit 1; }
-python -m pip install --no-input "jax[cpu]>=0.9" "blackjax>=1.2" joblib emcee treecorr
+# pytest is not optional here: benchmark_pipeline.py imports test_timing,
+# which imports pytest, so family D dies at import without it.
+python -m pip install --no-input "jax[cpu]>=0.9" "blackjax>=1.2" joblib emcee treecorr pytest
 python -m pip install --no-input "glass>=2026.1" || echo "!! glass failed -- GLASS families will not run"
 python -m pip install --no-input -e "${PKG}"
 

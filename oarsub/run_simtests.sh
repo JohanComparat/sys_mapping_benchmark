@@ -13,6 +13,9 @@
 #
 # GLASS only: the Uchuu mocks are ~40 GB and deliberately not staged.
 #
+# --syst-dir is the PARENT of the NSIDE directories: load_systematic_maps
+# appends "%04d" % nside itself.  Passing the NSIDE dir gave .../0128/0128/.
+#
 #   oarsub --project <proj> -S "./oarsub/run_simtests.sh <tag> <seeds_per_task> [offset]"
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -41,7 +44,7 @@ for j in $(seq 0 $(( SPT - 1 ))); do
         --n-glass 500000 \
         --glass-only \
         --methods OLS ISD-1 ElasticNet MCMC-add MCMC-comb \
-        --syst-dir "${SMB_DATA}/systematics/$(printf '%04d' "${NSIDE}")" \
+        --syst-dir "${SMB_DATA}/systematics" \
         --seed "${SEED}" \
         --output-dir "${OUT}"
 done
