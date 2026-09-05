@@ -135,6 +135,15 @@ class Recorder:
             med, mad = _time(fn, n_repeat)
         except Exception as exc:                        # keep the grid going
             print(f"    ! {operation}: {type(exc).__name__}: {exc}")
+            # Record the failure rather than dropping the row.  A silently
+            # absent method makes benchmarks.csv indistinguishable from one
+            # where the method was never requested.
+            self.rows.append({
+                "group": group, "operation": operation, "nside": nside,
+                "n_sys": n_sys, "n_pix": n_pix, "n_repeat": n_repeat,
+                "median_s": "", "mad_s": "",
+                "note": (note + "; " if note else "") + f"FAILED: {type(exc).__name__}",
+            })
             return
         self.rows.append({
             "group": group, "operation": operation, "nside": nside,
@@ -281,12 +290,16 @@ _STAGE2 = ["OLS", "ISD-1", "ElasticNet", "ISD-3", "MCMC-add", "MCMC-comb"]
 
 
 def bench_methods(rec: Recorder, nside: int, n_sys: int, n_repeat: int,
-                  methods: list[str], nuts: int) -> None:
+                  methods: list[str], nuts: int, n_repeat_mcmc: int = 3) -> None:
     print(f"  [stage2] nside={nside} n_sys={n_sys}")
     delta_g, delta_t = _make_data(nside, n_sys)
     n_pix = delta_g.size
     for meth in methods:
-        reps = 1 if meth.startswith("MCMC") else max(2, n_repeat // 4)
+        # MCMC used to be pinned at one draw, which is why every MCMC row in the
+        # published table has mad = 0: not a stable measurement, no measurement
+        # of spread at all.  Two draws is the minimum that yields a MAD.
+        reps = (max(2, n_repeat_mcmc) if meth.startswith("MCMC")
+                else max(2, n_repeat // 4))
         rec.add("stage2", meth, nside, n_sys, n_pix,
                 lambda m=meth: sm.run_decontamination(
                     m, delta_g, delta_t, sampler="auto",
@@ -366,6 +379,8 @@ def main() -> None:
     p.add_argument("--n-sys", type=int, nargs="+", default=None)
     p.add_argument("--n-repeat", type=int, default=None)
     p.add_argument("--nuts", type=int, default=None, help="NUTS warmup=samples")
+    p.add_argument("--n-repeat-mcmc", type=int, default=3,
+                   help="repeats for the MCMC methods (min 2, so the row has a MAD)")
     p.add_argument("--methods", nargs="+", default=_STAGE2)
     p.add_argument("--out-dir", type=Path, default=OUT_DIR)
     args = p.parse_args()
@@ -399,7 +414,8 @@ def main() -> None:
             if "stage1" in args.groups:
                 bench_stage1(rec, nside, n_sys, n_repeat)
             if "stage2" in args.groups:
-                bench_methods(rec, nside, n_sys, n_repeat, args.methods, nuts)
+                bench_methods(rec, nside, n_sys, n_repeat, args.methods, nuts,
+                              args.n_repeat_mcmc)
 
     csv_path = args.out_dir / "benchmarks.csv"
     fields = ["group", "operation", "nside", "n_sys", "n_pix", "n_repeat",
