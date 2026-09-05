@@ -1,0 +1,39 @@
+{
+  "data": {
+    "nside": 64,
+    "n_gal": 120882,
+    "fsky": 0.4408,
+    "nbar": 5.579288988061479,
+    "sigma_hat": 0.6438293723740685,
+    "sigma_clus": 0.48505871077034757
+  },
+  "mocks": [
+    {
+      "cl_amplitude": 0.0005,
+      "nbar": 5.601205751761783,
+      "sigma_hat": 0.6528147658760969,
+      "shot": 0.17853298813125434,
+      "sigma_clus": 0.4976285064328699,
+      "sigma_clus_data": 0.48505871077034757,
+      "clustering_ratio": 1.0259139674918105
+    },
+    {
+      "cl_amplitude": 0.00047505962223435015,
+      "nbar": 5.5979265957880155,
+      "sigma_hat": 0.6467532946429965,
+      "shot": 0.1786375692658097,
+      "sigma_clus": 0.4895429040092002,
+      "sigma_clus_data": 0.48505871077034757,
+      "clustering_ratio": 1.009244640162695
+    }
+  ],
+  "fit": {
+    "requested": true,
+    "converged": true,
+    "tol": 0.02,
+    "n_probes": 2,
+    "cl_amplitude": 0.00047505962223435015,
+    "clustering_ratio": 1.009244640162695,
+    "sigma_hat_mock": 0.6467532946429965
+  }
+}

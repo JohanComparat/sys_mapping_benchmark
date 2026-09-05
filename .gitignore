@@ -12,3 +12,13 @@ results/**/*.tmp
 # OAR campaign
 oarsub/site.sh
 oarsub/logs/
+
+# Pulled campaign trees that are not the canonical copy.  pull_results.sh rsyncs
+# the whole remote results/ dir, so a pull brings tags other than the one named:
+# glass_calibration/20260904 is byte-identical to 20260904b, and 20260904fit is a
+# one-cell pilot.  Committing either would publish the same measurement twice.
+results/campaign/*/glass_calibration/20260904/
+results/campaign/*/glass_calibration/20260904fit/
+results/campaign/*/simulations/
+results/campaign/*/benchmarks/
+results/campaign/*/ls10_mocklrt/
