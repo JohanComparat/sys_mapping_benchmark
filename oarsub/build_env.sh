@@ -36,9 +36,16 @@ mamba install -y -c conda-forge numpy scipy astropy healpy matplotlib scikit-lea
 
 PKG="${SMB_PKG}"
 [ -d "${PKG}" ] || { echo "!! sys_mapping checkout not found at ${PKG}"; exit 1; }
+# blackjax is PINNED, not floated.  1.6.2 forwards window_adaptation's
+# progress_bar down to the NUTS kernel, which rejects it:
+#   TypeError: kernel() got an unexpected keyword argument 'progress_bar'
+# That killed all 75 jobs of family F.  1.5 is the version the package and
+# every published result were verified against; upgrading it belongs in its
+# own change, not in the middle of a measurement campaign.
+#
 # pytest is not optional here: benchmark_pipeline.py imports test_timing,
 # which imports pytest, so family D dies at import without it.
-python -m pip install --no-input "jax[cpu]>=0.9" "blackjax>=1.2" joblib emcee treecorr pytest
+python -m pip install --no-input "jax[cpu]>=0.9" "blackjax==1.5" joblib emcee treecorr pytest
 python -m pip install --no-input "glass>=2026.1" || echo "!! glass failed -- GLASS families will not run"
 python -m pip install --no-input -e "${PKG}"
 

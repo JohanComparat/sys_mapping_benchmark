@@ -66,8 +66,19 @@ python "${SMB_PKG}/scripts/run_ls10_analysis.py" \
     --sampler auto \
     --lrt-null-mocks "${NMOCK}" \
     --lrt-null-cl-amplitude "${CLAMP}" \
-    --resume-null \
     --no-rst \
     --output-dir "${OUT}"
+
+# --resume-null is deliberately NOT used.  It MERGES new draws into the stored
+# null_lambda, so resuming a null built at 5e-4 with draws at the corrected
+# amplitude would blend two different clustering amplitudes into one
+# distribution -- the opposite of what this family exists to do.  It also
+# silently skips all work when the output directory is fresh, which is how the
+# first pass of E "succeeded" in 40 seconds having computed nothing.
+
+# Verify the cell actually produced a mock-calibrated null.  A family that can
+# exit 0 having done nothing is worse than one that crashes.
+PJ="${OUT}/${SAMPLE}_NSIDE$(printf '%04d' "${NSIDE}")_params.json"
+python "${REPO}/oarsub/check_lrt_cell.py" "${PJ}" "${NMOCK}" || exit 1
 
 echo "== lrt cell ${IDX} DONE on $(hostname)"
