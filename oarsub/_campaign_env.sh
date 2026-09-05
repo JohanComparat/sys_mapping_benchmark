@@ -76,7 +76,7 @@ campaign_activate_env () {
 import sys
 missing = []
 for m in ("numpy", "scipy", "healpy", "jax", "blackjax", "emcee",
-          "joblib", "sklearn", "glass", "sys_mapping"):
+          "joblib", "sklearn", "glass", "pytest", "sys_mapping"):
     try:
         __import__(m)
     except Exception as e:

@@ -74,15 +74,17 @@ while [ $# -gt 0 ]; do
     D) echo "== D  benchmark grid (1 job, cpumodel-pinned, core=8, 12 h)"
        sub "./oarsub/run_bench.sh ${TAG} 5" ;;
     E) # E is the one family that takes a value from another: B's fitted amplitude.
-       CLAMP="${1:-}"    # now genuinely the next argument
-       if [ -z "${CLAMP}" ]; then
-           echo "!! family E needs B's cl_amplitude:" >&2
-           echo "   ./oarsub/submit_campaign.sh ${TAG} E <cl_amplitude>" >&2
+       CALIB="${1:-}"
+       if [ -z "${CALIB}" ]; then
+           echo "!! family E needs family B's calibration tag:" >&2
+           echo "   ./oarsub/submit_campaign.sh ${TAG} E <calib_tag> [fallback_amplitude]" >&2
            exit 1
        fi
        shift
-       echo "== E  mock-calibrated LRT (array 18, core=8, 48 h, cl_amplitude=${CLAMP})"
-       sub "./oarsub/run_lrt.sh ${TAG} 50 ${CLAMP}" ;;
+       FB=""
+       if [[ "${1:-}" =~ ^[0-9.eE+-]+$ ]]; then FB="$1"; shift; fi
+       echo "== E  mock-calibrated LRT (array 18, core=8, 48 h, per-cell amplitude from ${CALIB})"
+       sub "./oarsub/run_lrt.sh ${TAG} 50 ${CALIB} ${FB}" ;;
     F) # 75 elements rarely fit beside B and C, so F is submitted in chunks with
        # an explicit offset.  Re-run `submit_campaign.sh <tag> F` as the queue
        # drains; campaign_status.sh names the seeds still missing.

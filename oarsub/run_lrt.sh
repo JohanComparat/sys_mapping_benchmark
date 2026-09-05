@@ -7,23 +7,27 @@
 #
 # FAMILY E -- mock-calibrated LRT, 9 samples x NSIDE {32,64} = 18 cells.
 #
-# DEPENDS ON FAMILY B.  The published null was drawn from mocks ~25x under-
-# clustered relative to the data (mock sigma_hat 0.117 vs data 0.397), which
-# makes every p-value optimistic; `p` is also floored at 0.032 by N=31 mocks.
-# Pass B's fitted cl_amplitude as the third argument -- running this with the
-# 5e-4 default just reproduces the bias it exists to remove.
+# DEPENDS ON FAMILY B.  The published null was drawn from mocks far less
+# clustered than the data, which makes every p-value optimistic; `p` is also
+# floored at 0.032 by N=31 mocks.
 #
-#   oarsub --project <proj> -S "./oarsub/run_lrt.sh <tag> <n_mocks> <cl_amplitude>"
+# The amplitude is read PER CELL from family B, not passed as one number:
+# B measured 0.104 for the logM 9.0 sample and 0.017 for logM 11.0, an order of
+# magnitude apart, so one global value would be wrong for almost every sample.
+# Give the calibration tag; a fallback may follow for cells B did not fit.
+#
+#   oarsub --project <proj> -S "./oarsub/run_lrt.sh <tag> <n_mocks> <calib_tag> [fallback]"
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source oarsub/_campaign_env.sh
 
 TAG="${1:-${OAR_ARRAY_ID:-local}}"
 NMOCK="${2:-50}"
-CLAMP="${3:-}"
-if [ -z "${CLAMP}" ]; then
-    echo "!! no cl_amplitude given.  Read it off family B before submitting:" >&2
-    echo "   ./oarsub/campaign_status.sh glass <tag>" >&2
+CALIB_TAG="${3:-}"
+FALLBACK="${4:-}"
+if [ -z "${CALIB_TAG}" ]; then
+    echo "!! no calibration tag given.  Run family B first, then:" >&2
+    echo "   ./oarsub/submit_campaign.sh <tag> E <calib_tag>" >&2
     exit 1
 fi
 campaign_activate_env
@@ -38,6 +42,20 @@ CATDIR="${SMB_DATA}/sweep/BGS_VLIM_Mstar"
 TPLDIR="${SMB_DATA}/systematics/$(printf '%04d' "${NSIDE}")"
 OUT="${SMB_RESULTS}/ls10_mocklrt/${TAG}/NSIDE$(printf '%04d' "${NSIDE}")"
 mkdir -p "${OUT}"
+
+# Median over B's converged seeds for THIS sample and NSIDE.
+CELLDIR="${SMB_RESULTS}/glass_calibration/${CALIB_TAG}/${SAMPLE}_NSIDE$(printf '%04d' "${NSIDE}")"
+CLAMP="$(python "${REPO}/oarsub/median_amplitude.py" "${CELLDIR}")"
+if [ -z "${CLAMP}" ]; then
+    if [ -n "${FALLBACK}" ]; then
+        echo "!! family B did not converge for this cell; using fallback ${FALLBACK}"
+        CLAMP="${FALLBACK}"
+    else
+        echo "!! no converged family-B amplitude for ${SAMPLE} NSIDE=${NSIDE}" >&2
+        echo "   (calibration tag '${CALIB_TAG}'); pass a fallback as the 4th argument" >&2
+        exit 1
+    fi
+fi
 
 echo "== cell ${IDX}: ${SAMPLE} NSIDE=${NSIDE} n_mocks=${NMOCK} cl_amplitude=${CLAMP}"
 python "${SMB_PKG}/scripts/run_ls10_analysis.py" \
