@@ -71,8 +71,8 @@ while [ $# -gt 0 ]; do
        sub "./oarsub/run_glass.sh ${TAG} 5 0 35" ;;
     C) echo "== C  variance cube (array 20 x 5 n_sys = 100 cells, core=4, 4 h)"
        sub "./oarsub/run_variance.sh ${TAG} 2000" ;;
-    D) echo "== D  benchmark grid (1 job, cpumodel-pinned, core=8, 12 h)"
-       sub "./oarsub/run_bench.sh ${TAG} 5" ;;
+    D) echo "== D  benchmark grid (1 job, cpumodel-pinned, core=8, 48 h)"
+       sub "./oarsub/run_bench.sh ${TAG} 5 2" ;;
     E) # E is the one family that takes a value from another: B's fitted amplitude.
        CALIB="${1:-}"
        if [ -z "${CALIB}" ]; then
