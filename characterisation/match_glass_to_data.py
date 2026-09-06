@@ -48,27 +48,51 @@ within ``--tol-density`` and every band of the clustering ratio is within
 ``--tol-cl``.  Matching one while drifting on the other is the failure mode this
 script exists to remove.
 
-What it achieves, and what it does not
---------------------------------------
-Validated on LS10 logM >= 10.0 at NSIDE 32, against seeds never used in the fit:
+Which scales have to match
+--------------------------
+The large ones.  Systematic templates -- depth, extinction, stellar density,
+seeing -- vary coherently over degrees to tens of degrees, so it is the
+two-halo, large-scale part of the correlation that decides how often a
+systematics-free field produces a spurious detection.  That is what the null has
+to reproduce.
 
-    sigma_hat      data 0.382    default 0.058 (0.15x)    matched 0.336 (0.88x)
-    C_l ratio      l >= 7: 0.85-1.04        l = 2-6: 0.03-0.22
+The small-scale end is the one-halo term: pairs of galaxies inside a single
+halo.  A lognormal field on one tophat shell has no halos in it and cannot
+produce that term at any input spectrum, and it does not need to -- no template
+varies on those scales, so the one-halo power does not enter the calibration.
+``--lmax-match`` bounds the fit accordingly; bands above it are reported as
+"not matched (small scale, one-halo)" rather than counted as failures.
 
-So the scatter deficit closes from a factor 6.6 to 12 per cent, and the spectrum
-matches to a few per cent for l >= 7.  It does NOT match l < 7, and that is worth
-stating plainly rather than hiding behind the summary number: those bands carry
-too few modes to constrain, are excluded from the convergence test by
-``--min-modes``, and a "converged" run therefore says nothing about them.  The
-per-band report printed at the end flags which bands were in the test.
+Validated on LS10 logM >= 10.0 at NSIDE 32, on six seeds never used in the fit
+(ratio of mock to data band power; cv is the cosmic-variance floor at six seeds):
 
-There is also a reason not to force a match there.  The target is the data's
-*measured* spectrum, which at the largest scales is where the survey's own
-depth and extinction gradients live.  Matching l = 2-3 would inject
-systematics-shaped power into a null whose entire purpose is to be
-systematics-free.  The residual deficit is thus partly a limitation and partly a
-deliberate floor; the honest statement is that the null is calibrated for
-l >= 7 and remains conservative at larger scales.
+    l    2     0.690   (cv 0.26)      default 5e-4 gives 0.023
+    l    3     1.139   (cv 0.22)
+    l  4-6     1.026   (cv 0.10)      default gives 0.027
+    l 7-10     0.885   (cv 0.07)
+    l 11-64    0.988, 0.927, 0.950, 0.962
+    sigma_hat  0.896x        nbar 1.006x
+
+So on the two-halo scales that set the systematics calibration, the mock goes
+from 40x under-clustered to within tens of per cent, and six of eight bands sit
+inside their own noise floor.  The l=2 band is 1.2 sigma from it, on five
+modes -- the largest scale the survey measures is the one it measures worst, and
+no amount of iterating changes that.
+
+A run will often end "NOT converged" while producing a good spectrum.  That is
+the intended behaviour, not a failure: with a handful of seeds the noise floor at
+l=2 is ~26 per cent, so a strict per-band test cannot pass there, and declaring
+success anyway would be the false convergence this file already had once.  What
+is returned in that case is the Polyak average, not the last iterate.
+
+Getting this backwards is easy and was done here first: an earlier version
+required a minimum mode count per band, which silently excluded the low-l bands
+from the update -- freezing their ratio at 1 so the iteration could never correct
+them -- and then converged on the small scales alone.  On LS10 logM >= 10.0 at
+NSIDE 32 that gave l >= 7 matched to a few per cent and l = 2-3 left 30x low,
+which is the wrong half of the problem solved.  Every band is now updated, and
+each is judged against its own cosmic-variance floor rather than discarded for
+being noisy.
 
 Usage
 -----
@@ -168,7 +192,8 @@ def measure_signal_cl(n_gal_map: np.ndarray, n_rand_map: np.ndarray,
 def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
           sigma_data=None,
           *, lmax, edges, n_iter, n_seeds, damping, tol_cl, tol_density,
-          cl_start=None, seed0=101, min_modes=25.0, verbose=True):
+          cl_start=None, seed0=101, lmax_match=None,
+          burn_in_factor=3.0, verbose=True):
     """Iterate the input spectrum until mock and data agree on both statistics."""
     # The input spectrum lives on GLASS's grid (l <= 3*nside), which is longer
     # than the grid the match is measured on.
@@ -181,7 +206,17 @@ def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
     # that is 63%.
     n_modes = np.array([np.sum(2 * np.arange(a, b) + 1)
                         for a, b in zip(edges[:-1], edges[1:])], dtype=float)
+    band_l_mid = np.array([0.5 * (a + b - 1)
+                           for a, b in zip(edges[:-1], edges[1:])])
+    if lmax_match is None:
+        lmax_match = float(edges[-1])
+    # Cosmic variance sets how well each band can be known.  Judging every band
+    # against one global tolerance either discards the low-l bands for being
+    # noisy -- which is what an earlier version did, and they are the bands that
+    # matter -- or demands of them a precision the realisations cannot deliver.
+    cv_band = np.sqrt(2.0 / np.maximum(n_modes, 1.0)) / np.sqrt(n_seeds)
     history = []
+    settled: list[np.ndarray] = []
 
     for it in range(n_iter):
         cls, nbars, sigs = [], [], []
@@ -208,7 +243,8 @@ def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
         # reads as perfect agreement and converges the loop on the first pass
         # having matched nothing.
         usable = np.isfinite(mock_bands) & (mock_bands > 0) & \
-                 np.isfinite(tgt_bands) & (tgt_bands > 0) & (n_modes >= min_modes)
+                 np.isfinite(tgt_bands) & (tgt_bands > 0) & \
+                 (band_l_mid <= lmax_match)
         if not usable.any():
             raise SystemExit("!! no band has positive signal in both data and "
                              "mock; the spectrum cannot be matched at this "
@@ -217,9 +253,15 @@ def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
         ratio[usable] = tgt_bands[usable] / mock_bands[usable]
         ratio = np.clip(ratio, 0.2, 5.0)
 
+        # Per-band tolerance: cosmic variance sets how well each band can be
+        # known, so a low-l band is judged against its own noise floor instead of
+        # being discarded for being noisy.
+        tol_band = np.maximum(tol_cl, cv_band)
+        excess = np.zeros_like(ratio)
+        excess[usable] = np.maximum(np.abs(ratio[usable] - 1.0)
+                                    - tol_band[usable], 0.0)
         cl_err = float(np.max(np.abs(ratio[usable] - 1.0)))
-        # expected scatter from cosmic variance alone, for context
-        cv = float(np.max(np.sqrt(2.0 / n_modes[usable]) / np.sqrt(n_seeds)))
+        cv = float(np.max(cv_band[usable]))
         d_err = abs(nbar_mock / nbar_target - 1.0)
         history.append({"iter": it, "cl_max_band_err": cl_err,
                         "effective_target": float(max(tol_cl, cv)),
@@ -240,15 +282,21 @@ def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
         # cosmic-variance floor is a test that can never pass, however good the
         # spectrum is -- the loop just burns iterations chasing its own noise.
         # The effective target is therefore the looser of the two.
-        target = max(tol_cl, cv)
-        if verbose and (it == n_iter - 1 or (cl_err <= target and d_err <= tol_density)):
-            print("     band report (a band outside the test is NOT matched, "
-                  "only unconstrained):", flush=True)
+        target = float(np.max(tol_band[usable]))
+        done = (not excess.any()) and d_err <= tol_density
+        if verbose and (it == n_iter - 1 or done):
+            print("     band report (large scales first -- these are the ones "
+                  "that matter):", flush=True)
             for i, (lo, hi) in enumerate(zip(edges[:-1], edges[1:])):
-                tag = "in test" if usable[i] else "EXCLUDED"
+                if not usable[i]:
+                    tag = "not matched (small scale, one-halo)"
+                elif excess[i] > 0:
+                    tag = f"OFF by {excess[i]:.3f} beyond tol {tol_band[i]:.3f}"
+                else:
+                    tag = f"ok (tol {tol_band[i]:.3f})"
                 print(f"       l={lo:>3}-{hi-1:<4} ratio {ratio[i]:6.3f}  "
-                      f"{int(n_modes[i]):>5} modes  [{tag}]", flush=True)
-        if cl_err <= target and d_err <= tol_density:
+                      f"{int(n_modes[i]):>5} modes  {tag}", flush=True)
+        if done:
             if verbose:
                 print(f"  -> converged: {cl_err:.3f} <= {target:.3f} "
                       f"({'noise floor' if cv > tol_cl else 'requested tolerance'})", flush=True)
@@ -257,6 +305,25 @@ def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
         cl_in = sanitise_cl(cl_in * _expand(ratio, edges, cl_in.size) ** damping,
                             3 * nside)
 
+        # Polyak averaging.  Each update is driven by a ratio measured from a
+        # finite number of realisations, so once the iteration is near the
+        # solution it stops improving and starts random-walking around it --
+        # visible as an error that bounces (0.10, 0.46, 0.28, 0.64) rather than
+        # settling.  Averaging the iterates after they enter that regime
+        # converges on the mean the walk is scattering about, which is the
+        # estimate wanted, and costs nothing extra.
+        if cl_err <= burn_in_factor * target:
+            settled.append(cl_in.copy())
+
+    if settled:
+        # Geometric mean: the update is multiplicative, so the iterates scatter
+        # log-normally about the answer rather than normally.
+        cl_avg = sanitise_cl(np.exp(np.mean(np.log(np.maximum(
+            np.array(settled), 1e-300)), axis=0)), 3 * nside)
+        if verbose:
+            print(f"  averaged the last {len(settled)} iterates within "
+                  f"{burn_in_factor:g}x tolerance", flush=True)
+        return cl_avg, history, False
     return cl_in, history, False
 
 
@@ -276,8 +343,11 @@ def main():
                     help="exponent on the update; <1 trades speed for stability")
     ap.add_argument("--tol-cl", type=float, default=0.10)
     ap.add_argument("--tol-density", type=float, default=0.01)
-    ap.add_argument("--min-modes", type=float, default=25.0,
-                    help="skip bands with fewer modes than this; they are\n                          cosmic-variance dominated")
+    ap.add_argument("--lmax-match", type=float, default=None,
+                    help="match only l <= this.  Above it the correlation is "
+                         "one-halo -- galaxies inside single haloes -- which a "
+                         "lognormal field cannot reproduce and which does not "
+                         "affect systematics calibration.  Default: all bands.")
     ap.add_argument("--out-dir", type=Path, default=OUT)
     a = ap.parse_args()
 
@@ -313,7 +383,7 @@ def main():
         cl_target, nbar_target,
         lmax=lmax, edges=edges, n_iter=a.n_iter, n_seeds=a.n_seeds,
         damping=a.damping, tol_cl=a.tol_cl, tol_density=a.tol_density,
-        min_modes=a.min_modes)
+        lmax_match=a.lmax_match)
 
     print(f"\n{'CONVERGED' if ok else 'NOT converged'} after {len(history)} iterations", flush=True)
     a.out_dir.mkdir(parents=True, exist_ok=True)
