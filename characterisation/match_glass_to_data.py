@@ -189,9 +189,30 @@ def measure_signal_cl(n_gal_map: np.ndarray, n_rand_map: np.ndarray,
 
 # ── the iteration ───────────────────────────────────────────────────────────
 
+def rp_band(rp_lo, rp_hi, z_eff, lmax, cosmo=None):
+    """Multipole band for a projected-separation range, clipped to this map.
+
+    wp(rp) is measured in Mpc/h; C_l in multipoles.  theta = rp / D_C(z_eff) and
+    l ~ pi/theta, so the same physical scale is a different l at every redshift --
+    rp = 10 Mpc/h is l = 63 at z_eff 0.07 and l = 241 at 0.27.  The band is then
+    clipped at lmax, because above l ~ 2*NSIDE the pixel window suppresses power
+    and the map cannot represent the scale however well the mock is matched.
+
+    Returns ``(lo, hi, rp_actually_covered, D_C)``.
+    """
+    from astropy.cosmology import FlatLambdaCDM
+    cosmo = cosmo or FlatLambdaCDM(H0=100, Om0=0.31)     # H0=100 => Mpc/h
+    d_c = float(cosmo.comoving_distance(z_eff).value)
+    lo = int(max(2, round(np.pi / (max(rp_lo, rp_hi) / d_c))))
+    hi = int(round(np.pi / (min(rp_lo, rp_hi) / d_c)))
+    hi_clipped = int(min(hi, lmax))
+    rp_min_covered = np.pi / (hi_clipped / d_c) if hi_clipped else float("inf")
+    return lo, hi_clipped, rp_min_covered, d_c
+
+
 def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
                    cl_target, nbar_target, *, lmax, l_large=32, n_seeds=8,
-                   tol=0.10, seed0=990001, verbose=True):
+                   tol=0.10, seed0=990001, band=None, verbose=True):
     """Does a matched spectrum actually reproduce the data's large-scale power?
 
     Run BEFORE a mock is used for anything.  The matching loop optimises against
@@ -210,7 +231,7 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
 
     Returns a dict with ``passed`` --- use the spectrum only if it is True.
     """
-    lo, hi = 2, int(min(l_large, lmax))
+    lo, hi = band if band is not None else (2, int(min(l_large, lmax)))
     w = 2 * np.arange(lo, hi + 1) + 1.0          # modes per multipole
     n_modes = float(w.sum())
     tgt_ls = float(np.sum(w * cl_target[lo:hi + 1]) / n_modes)
@@ -403,6 +424,12 @@ def main():
                     help="exponent on the update; <1 trades speed for stability")
     ap.add_argument("--tol-cl", type=float, default=0.10)
     ap.add_argument("--tol-density", type=float, default=0.01)
+    ap.add_argument("--rp-mpch", type=float, nargs=2, default=[5.0, 20.0],
+                    metavar=("RP_MIN", "RP_MAX"),
+                    help="projected separation range the gate is applied over, "
+                         "in Mpc/h -- the wp(rp) scale.  Converted per sample "
+                         "through its own z_eff, and clipped to what the NSIDE "
+                         "can represent.  Default 5 20.")
     ap.add_argument("--l-large", type=int, default=32,
                     help="upper multipole of the large-scale band the mock must "
                          "reproduce (default 32; ~6 deg, the scale templates vary on)")
@@ -457,10 +484,22 @@ def main():
 
     # The gate.  Convergence of the loop is not evidence that the mock is usable:
     # the loop is scored on the realisations it fitted.  This draws unseen seeds.
+    z_eff = float(np.median(z))
+    b_lo, b_hi, rp_cov, d_c = rp_band(a.rp_mpch[0], a.rp_mpch[1], z_eff, lmax)
+    print(f"\n  gate band: rp = {min(a.rp_mpch):g}-{max(a.rp_mpch):g} Mpc/h at "
+          f"z_eff {z_eff:.3f} (D_C {d_c:.0f} Mpc/h) -> l = {b_lo}-{b_hi}", flush=True)
+    if rp_cov > min(a.rp_mpch) * 1.05:
+        print(f"  NOTE: NSIDE {a.nside} reaches only rp >= {rp_cov:.1f} Mpc/h "
+              f"(l <= {lmax}); below that the pixel window, not the mock, sets "
+              f"the power.  The gate is applied over the reachable part.",
+          flush=True)
     val = validate_match(cl_fit, a.nside, n_total, z_edges, nz,
                          uniform_randoms_on(good, float(np.asarray(nr)[good].mean())),
-                         cl_target, nbar_target, lmax=lmax,
-                         l_large=a.l_large, n_seeds=a.n_validate, tol=a.tol_large_scale)
+                         cl_target, nbar_target, lmax=lmax, band=(b_lo, b_hi),
+                         n_seeds=a.n_validate, tol=a.tol_large_scale)
+    val["rp_mpch_requested"] = [min(a.rp_mpch), max(a.rp_mpch)]
+    val["rp_mpch_covered"] = [float(rp_cov), max(a.rp_mpch)]
+    val["z_eff"] = z_eff
     a.out_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{a.sample}_NSIDE{a.nside:04d}"
     (a.out_dir / f"{stem}_match.json").write_text(json.dumps({
