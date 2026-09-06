@@ -189,6 +189,66 @@ def measure_signal_cl(n_gal_map: np.ndarray, n_rand_map: np.ndarray,
 
 # ── the iteration ───────────────────────────────────────────────────────────
 
+def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
+                   cl_target, nbar_target, *, lmax, l_large=32, n_seeds=8,
+                   tol=0.10, seed0=990001, verbose=True):
+    """Does a matched spectrum actually reproduce the data's large-scale power?
+
+    Run BEFORE a mock is used for anything.  The matching loop optimises against
+    the same realisations it is fitted on, so its own error is not evidence; this
+    draws fresh seeds and asks the question the calibration depends on.
+
+    The test is on the AGGREGATED power over 2 <= l <= ``l_large``, not band by
+    band.  Two reasons.  Physically, what a systematics null has to get right is
+    the total two-halo power on the scales templates vary over, not the value at
+    any single multipole.  Statistically, a per-l test at 10 per cent is not
+    meaningful at low l: l=2 carries five modes, so cosmic variance alone
+    scatters it by ~26 per cent at five realisations, and a band-by-band gate
+    would either fail on noise or need dozens of times more mocks.  Aggregated
+    over l = 2..32 there are ~1085 modes and the floor is ~2 per cent, so a
+    10 per cent gate measures the mock rather than the noise.
+
+    Returns a dict with ``passed`` --- use the spectrum only if it is True.
+    """
+    lo, hi = 2, int(min(l_large, lmax))
+    w = 2 * np.arange(lo, hi + 1) + 1.0          # modes per multipole
+    n_modes = float(w.sum())
+    tgt_ls = float(np.sum(w * cl_target[lo:hi + 1]) / n_modes)
+
+    cls, sigs, nbars = [], [], []
+    for k in range(n_seeds):
+        cat = sm.generate_glass_fullsky_mock(nside, n_total, z_edges, nz,
+                                             seed=seed0 + k, rand_factor=2,
+                                             cl_input=cl_fit)
+        ng = sm.pixelize_catalog(cat["ra"], cat["dec"], nside)
+        cl_m, nbar_m, _, _ = measure_signal_cl(ng, mock_randoms, nside, lmax)
+        dm, _g = sm.compute_overdensity(ng, mock_randoms)
+        cls.append(cl_m); nbars.append(nbar_m)
+        sigs.append(float(np.std(np.asarray(dm))))
+    cl_mock = np.mean(cls, axis=0)
+    mock_ls = float(np.sum(w * cl_mock[lo:hi + 1]) / n_modes)
+
+    ratio = mock_ls / tgt_ls if tgt_ls > 0 else float("nan")
+    floor = float(np.sqrt(2.0 / n_modes) / np.sqrt(n_seeds))
+    d_err = abs(float(np.mean(nbars)) / nbar_target - 1.0)
+    passed = bool(np.isfinite(ratio) and abs(ratio - 1.0) <= tol and d_err <= 0.02)
+
+    out = {"passed": passed, "large_scale_ratio": ratio, "tol": tol,
+           "l_range": [lo, hi], "n_modes": n_modes, "n_seeds": n_seeds,
+           "cosmic_variance_floor": floor, "density_ratio_err": d_err,
+           "sigma_hat_mock": float(np.mean(sigs)),
+           "seeds": [seed0 + k for k in range(n_seeds)]}
+    if verbose:
+        verdict = "PASS" if passed else "FAIL"
+        print(f"\n  validation on {n_seeds} unseen seeds, l = {lo}..{hi} "
+              f"({int(n_modes)} modes):", flush=True)
+        print(f"    large-scale power ratio mock/data = {ratio:.3f} "
+              f"(need |ratio-1| <= {tol:.2f}; noise floor {floor:.3f})", flush=True)
+        print(f"    density ratio error = {d_err:.4f} (need <= 0.02)", flush=True)
+        print(f"    -> {verdict}", flush=True)
+    return out
+
+
 def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
           sigma_data=None,
           *, lmax, edges, n_iter, n_seeds, damping, tol_cl, tol_density,
@@ -343,6 +403,14 @@ def main():
                     help="exponent on the update; <1 trades speed for stability")
     ap.add_argument("--tol-cl", type=float, default=0.10)
     ap.add_argument("--tol-density", type=float, default=0.01)
+    ap.add_argument("--l-large", type=int, default=32,
+                    help="upper multipole of the large-scale band the mock must "
+                         "reproduce (default 32; ~6 deg, the scale templates vary on)")
+    ap.add_argument("--tol-large-scale", type=float, default=0.10,
+                    help="the gate: mock large-scale power must be within this "
+                         "fraction of the data's before the mock may be used")
+    ap.add_argument("--n-validate", type=int, default=8,
+                    help="unseen seeds used for the gate")
     ap.add_argument("--lmax-match", type=float, default=None,
                     help="match only l <= this.  Above it the correlation is "
                          "one-halo -- galaxies inside single haloes -- which a "
@@ -386,17 +454,30 @@ def main():
         lmax_match=a.lmax_match)
 
     print(f"\n{'CONVERGED' if ok else 'NOT converged'} after {len(history)} iterations", flush=True)
+
+    # The gate.  Convergence of the loop is not evidence that the mock is usable:
+    # the loop is scored on the realisations it fitted.  This draws unseen seeds.
+    val = validate_match(cl_fit, a.nside, n_total, z_edges, nz,
+                         uniform_randoms_on(good, float(np.asarray(nr)[good].mean())),
+                         cl_target, nbar_target, lmax=lmax,
+                         l_large=a.l_large, n_seeds=a.n_validate, tol=a.tol_large_scale)
     a.out_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{a.sample}_NSIDE{a.nside:04d}"
     (a.out_dir / f"{stem}_match.json").write_text(json.dumps({
         "sample": a.sample, "nside": a.nside, "lmax": lmax, "fsky": fsky,
         "nbar_data": nbar_target, "n_total": n_total,
-        "converged": ok, "band_edges": [int(e) for e in edges],
+        "converged": ok, "validation": val,
+        "usable": bool(val["passed"]),
+        "band_edges": [int(e) for e in edges],
         "history": history,
         "cl_matched": [float(c) for c in cl_fit],
         "cl_target_signal": [float(c) for c in cl_target],
     }, indent=2))
     print(f"-> {a.out_dir / (stem + '_match.json')}", flush=True)
+    if not val["passed"]:
+        print("!! this spectrum did NOT pass the large-scale check and is marked "
+              "unusable; load_matched_cl will refuse it", flush=True)
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

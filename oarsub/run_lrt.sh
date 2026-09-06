@@ -57,7 +57,19 @@ if [ -z "${CLAMP}" ]; then
     fi
 fi
 
-echo "== cell ${IDX}: ${SAMPLE} NSIDE=${NSIDE} n_mocks=${NMOCK} cl_amplitude=${CLAMP}"
+# A matched spectrum for this cell supersedes the scalar amplitude entirely: the
+# scalar was fitted to total pixel variance, which the small scales dominate,
+# while the calibration depends on the large ones.
+MATCH_DIR="${SMB_RESULTS}/glass_match/${CALIB_TAG}"
+MATCH_ARG=()
+if [ -f "${MATCH_DIR}/${SAMPLE}_NSIDE$(printf '%04d' "${NSIDE}")_match.json" ]; then
+    MATCH_ARG=(--lrt-null-cl-file "${MATCH_DIR}")
+    echo "== cell ${IDX}: ${SAMPLE} NSIDE=${NSIDE} n_mocks=${NMOCK} "\
+         "null=MATCHED spectrum from ${CALIB_TAG}"
+else
+    echo "== cell ${IDX}: ${SAMPLE} NSIDE=${NSIDE} n_mocks=${NMOCK} "\
+         "null=parametric, cl_amplitude=${CLAMP} (no matched spectrum in ${MATCH_DIR})"
+fi
 python "${SMB_PKG}/scripts/run_ls10_analysis.py" \
     --catalog-dir "${CATDIR}" \
     --sample "${SAMPLE}" \
@@ -66,6 +78,7 @@ python "${SMB_PKG}/scripts/run_ls10_analysis.py" \
     --sampler auto \
     --lrt-null-mocks "${NMOCK}" \
     --lrt-null-cl-amplitude "${CLAMP}" \
+    "${MATCH_ARG[@]}" \
     --no-rst \
     --output-dir "${OUT}"
 

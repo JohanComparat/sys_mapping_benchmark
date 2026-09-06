@@ -4,7 +4,8 @@
 #
 #   ./oarsub/submit_campaign.sh <tag> A            # env build, first and alone
 #   ./oarsub/submit_campaign.sh <tag> B C D F      # the independent families
-#   ./oarsub/submit_campaign.sh <tag> E 3.8e-2     # LRT, after reading B
+#   ./oarsub/submit_campaign.sh <tag> M            # match the mocks per sample
+#   ./oarsub/submit_campaign.sh <tag> E <calib_tag> # LRT, after M (or B)
 #
 # The submitting environment is NOT propagated to OAR jobs on this site, so
 # every setting a job needs is passed positionally rather than exported.
@@ -73,6 +74,9 @@ while [ $# -gt 0 ]; do
        sub "./oarsub/run_variance.sh ${TAG} 2000" ;;
     D) echo "== D  benchmark grid (1 job, cpumodel-pinned, core=8, 48 h)"
        sub "./oarsub/run_bench.sh ${TAG} 5 2" ;;
+    M) echo "== M  match each mock to its sample's large-scale clustering"
+       echo "      (array 18: 9 samples x NSIDE {32,64}, core=4, 6 h)"
+       sub "./oarsub/run_glassmatch.sh ${TAG} 25 5" ;;
     E) # E is the one family that takes a value from another: B's fitted amplitude.
        CALIB="${1:-}"
        if [ -z "${CALIB}" ]; then
@@ -107,7 +111,7 @@ while [ $# -gt 0 ]; do
              echo "   $(( TOTAL_F - OFF - N )) element(s) left:  ./oarsub/submit_campaign.sh ${TAG} F $(( OFF + N ))"
            fi
        fi ;;
-    *) echo "!! unknown family '${fam}' (expected A B C D E F)"; exit 1 ;;
+    *) echo "!! unknown family '${fam}' (expected A B C D E F M)"; exit 1 ;;
   esac
 done
 
