@@ -101,7 +101,7 @@ while [ $# -gt 0 ]; do
        elif [ "${N}" -le 0 ]; then
            echo "== F  no queue room (${FREE} slots free); retry when B/C drain"
        else
-           echo "== F  simulation tests (elements $(( OFF + 1 ))-$(( OFF + N )) of ${TOTAL_F}, core=8, 12 h)"
+           echo "== F  simulation tests (elements $(( OFF + 1 ))-$(( OFF + N )) of ${TOTAL_F}, core=8, 24 h)"
            sub "./oarsub/run_simtests.sh ${TAG} 2 ${OFF}" --array "${N}"
            if [ $(( OFF + N )) -lt "${TOTAL_F}" ]; then
              echo "   $(( TOTAL_F - OFF - N )) element(s) left:  ./oarsub/submit_campaign.sh ${TAG} F $(( OFF + N ))"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #OAR --name smb_simtests
-#OAR -l /nodes=1/core=8,walltime=12:00:00
+#OAR -l /nodes=1/core=8,walltime=24:00:00
 #OAR --array 75
 #OAR --stdout oarsub/logs/%jobid%.simtests.out
 #OAR --stderr oarsub/logs/%jobid%.simtests.err
@@ -12,6 +12,10 @@
 # correlation the docs report has no error bar; seeds are the whole point here.
 #
 # GLASS only: the Uchuu mocks are ~40 GB and deliberately not staged.
+#
+# 24 h, not 12: at 12 h the NSIDE 32 and 64 tiers finished 50/50 but 25 of the
+# NSIDE-128 elements were killed at the wall, leaving that tier at 12/50.  The
+# cost is superlinear in pixel count and the two seeds per element share a job.
 #
 # --syst-dir is the PARENT of the NSIDE directories: load_systematic_maps
 # appends "%04d" % nside itself.  Passing the NSIDE dir gave .../0128/0128/.
