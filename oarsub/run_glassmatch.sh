@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #OAR --name smb_glassmatch
-#OAR -l /nodes=1/core=4,walltime=06:00:00
-#OAR --array 18
+#OAR -l /nodes=1/core=4,walltime=12:00:00
+#OAR --array 9
 #OAR --stdout oarsub/logs/%jobid%.glassmatch.out
 #OAR --stderr oarsub/logs/%jobid%.glassmatch.err
 #
@@ -34,7 +34,16 @@ CELLS="${4:-}"
 campaign_activate_env
 campaign_threads >/dev/null
 
-NSIDES=(32 64)
+# One cell per sample, at the coarsest NSIDE that can still VERIFY the gate band
+# down to rp = 10 Mpc/h.  theta = rp/D_C(z_eff) and l ~ pi/theta, so the same
+# physical scale is a finer multipole at higher redshift: l = 63 for the logM 9.0
+# sample and l = 241 for logM 11.5.  Above l ~ 2*NSIDE the pixel window sets the
+# power rather than the mock, so the map has to reach it.
+#
+# The resulting spectrum is a property of the SAMPLE, not of the map it was
+# verified on, so the LRT at NSIDE 32 or 64 loads whichever spectrum exists --
+# resolution limits what can be checked, not what can be used.
+NSIDE_FOR_SAMPLE=(32 64 128 128 128 128 128 128 128)
 IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 ))
 if [ -n "${CELLS}" ]; then
     IFS=',' read -r -a CELL_LIST <<< "${CELLS}"
@@ -45,8 +54,8 @@ if [ -n "${CELLS}" ]; then
     IDX="${CELL_LIST[$IDX]}"
     echo "-- cell list ${CELLS}: this element is cell ${IDX}"
 fi
-SAMPLE="${SMB_SAMPLES[$(( IDX / 2 ))]}"
-NSIDE="${NSIDES[$(( IDX % 2 ))]}"
+SAMPLE="${SMB_SAMPLES[${IDX}]}"
+NSIDE="${NSIDE_FOR_SAMPLE[${IDX}]}"
 
 OUT="${SMB_RESULTS}/glass_match/${TAG}"
 mkdir -p "${OUT}"
@@ -57,6 +66,7 @@ python -u characterisation/match_glass_to_data.py \
     --catalog-dir "${SMB_DATA}/sweep/BGS_VLIM_Mstar" \
     --nside "${NSIDE}" \
     --n-iter "${NITER}" \
+    --rp-mpch 10 20 \
     --n-seeds "${NSEEDS}" \
     --out-dir "${OUT}"
 

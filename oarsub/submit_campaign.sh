@@ -85,7 +85,7 @@ while [ $# -gt 0 ]; do
            sub "./oarsub/run_glassmatch.sh ${TAG} 25 5 ${CELLS}" --array "${N_M}"
        else
            echo "== M  match each mock to its sample's large-scale clustering"
-           echo "      (array 18: 9 samples x NSIDE {32,64}, core=4, 6 h)"
+           echo "      (array 9: one per sample, NSIDE set to reach rp=10 Mpc/h, core=4, 12 h)"
            sub "./oarsub/run_glassmatch.sh ${TAG} 25 5"
        fi ;;
     E) # E is the one family that takes a value from another: B's fitted amplitude.

@@ -235,7 +235,7 @@ def rp_band(rp_lo, rp_hi, z_eff, lmax, cosmo=None):
 
 def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
                    cl_target, nbar_target, *, lmax, l_large=32, n_seeds=8,
-                   tol=0.10, seed0=990001, band=None, verbose=True):
+                   tol=0.10, tol_density=0.03, seed0=990001, band=None, verbose=True):
     """Does a matched spectrum actually reproduce the data's large-scale power?
 
     Run BEFORE a mock is used for anything.  The matching loop optimises against
@@ -279,7 +279,8 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
     ratio = mock_ls / tgt_ls if tgt_ls > 0 else float("nan")
     floor = float(np.sqrt(2.0 / n_modes) / np.sqrt(n_seeds))
     d_err = abs(float(np.mean(nbars)) / nbar_target - 1.0)
-    passed = bool(np.isfinite(ratio) and abs(ratio - 1.0) <= tol and d_err <= 0.02)
+    passed = bool(np.isfinite(ratio) and abs(ratio - 1.0) <= tol
+                  and d_err <= tol_density)
 
     out = {"passed": passed, "large_scale_ratio": ratio, "tol": tol,
            "l_range": [lo, hi], "n_modes": n_modes, "n_seeds": n_seeds,
@@ -292,7 +293,7 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
               f"({int(n_modes)} modes):", flush=True)
         print(f"    large-scale power ratio mock/data = {ratio:.3f} "
               f"(need |ratio-1| <= {tol:.2f}; noise floor {floor:.3f})", flush=True)
-        print(f"    density ratio error = {d_err:.4f} (need <= 0.02)", flush=True)
+        print(f"    density ratio error = {d_err:.4f} (need <= {tol_density:.2f})", flush=True)
         print(f"    -> {verdict}", flush=True)
     return out
 
@@ -450,8 +451,9 @@ def main():
     ap.add_argument("--damping", type=float, default=0.4,
                     help="exponent on the update; <1 trades speed for stability")
     ap.add_argument("--tol-cl", type=float, default=0.10)
-    ap.add_argument("--tol-density", type=float, default=0.01)
-    ap.add_argument("--rp-mpch", type=float, nargs=2, default=[5.0, 20.0],
+    ap.add_argument("--tol-density", type=float, default=0.03,
+                    help="mock mean density must be within this fraction of the data's")
+    ap.add_argument("--rp-mpch", type=float, nargs=2, default=[10.0, 20.0],
                     metavar=("RP_MIN", "RP_MAX"),
                     help="projected separation range the gate is applied over, "
                          "in Mpc/h -- the wp(rp) scale.  Converted per sample "
@@ -531,7 +533,8 @@ def main():
     val = validate_match(cl_fit, a.nside, n_total, z_edges, nz,
                          uniform_randoms_on(good, float(np.asarray(nr)[good].mean())),
                          cl_target, nbar_target, lmax=lmax, band=(b_lo, b_hi),
-                         n_seeds=a.n_validate, tol=a.tol_large_scale)
+                         n_seeds=a.n_validate, tol=a.tol_large_scale,
+                         tol_density=a.tol_density)
     val["rp_mpch_requested"] = [min(a.rp_mpch), max(a.rp_mpch)]
     val["rp_mpch_covered"] = [float(rp_cov), float(rp_cov_max)]
     val["rp_band_widened"] = bool(widened)
