@@ -206,8 +206,20 @@ def rp_band(rp_lo, rp_hi, z_eff, lmax, cosmo=None):
     lo = int(max(2, round(np.pi / (max(rp_lo, rp_hi) / d_c))))
     hi = int(round(np.pi / (min(rp_lo, rp_hi) / d_c)))
     hi_clipped = int(min(hi, lmax))
+
+    # The whole requested range can lie beyond what the map resolves.  At
+    # NSIDE 32 (lmax 64) the logM >= 10.25 sample sits at z_eff 0.17, where even
+    # rp = 20 Mpc/h is l = 77 -- so there is no reachable part of rp = 5-20 at
+    # all, lo > hi, and the band is empty.  That is a statement about the
+    # resolution, not an error: fall back to the largest scales the map does
+    # resolve, and let the caller report which rp range was actually tested
+    # rather than silently implying the requested one.
+    widened = False
+    if lo > hi_clipped:
+        lo, hi_clipped, widened = max(2, lmax // 4), lmax, True
     rp_min_covered = np.pi / (hi_clipped / d_c) if hi_clipped else float("inf")
-    return lo, hi_clipped, rp_min_covered, d_c
+    rp_max_covered = np.pi / (lo / d_c) if lo else float("inf")
+    return lo, hi_clipped, rp_min_covered, d_c, rp_max_covered, widened
 
 
 def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
@@ -234,6 +246,10 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
     lo, hi = band if band is not None else (2, int(min(l_large, lmax)))
     w = 2 * np.arange(lo, hi + 1) + 1.0          # modes per multipole
     n_modes = float(w.sum())
+    if n_modes <= 0:
+        raise ValueError(
+            f"empty validation band l={lo}..{hi}: the requested scales lie "
+            f"outside what lmax={lmax} resolves, and no fallback was applied")
     tgt_ls = float(np.sum(w * cl_target[lo:hi + 1]) / n_modes)
 
     cls, sigs, nbars = [], [], []
@@ -485,10 +501,18 @@ def main():
     # The gate.  Convergence of the loop is not evidence that the mock is usable:
     # the loop is scored on the realisations it fitted.  This draws unseen seeds.
     z_eff = float(np.median(z))
-    b_lo, b_hi, rp_cov, d_c = rp_band(a.rp_mpch[0], a.rp_mpch[1], z_eff, lmax)
+    b_lo, b_hi, rp_cov, d_c, rp_cov_max, widened = rp_band(
+        a.rp_mpch[0], a.rp_mpch[1], z_eff, lmax)
     print(f"\n  gate band: rp = {min(a.rp_mpch):g}-{max(a.rp_mpch):g} Mpc/h at "
           f"z_eff {z_eff:.3f} (D_C {d_c:.0f} Mpc/h) -> l = {b_lo}-{b_hi}", flush=True)
-    if rp_cov > min(a.rp_mpch) * 1.05:
+    if widened:
+        print(f"  NOTE: NSIDE {a.nside} cannot reach ANY of rp = "
+              f"{min(a.rp_mpch):g}-{max(a.rp_mpch):g} Mpc/h at z_eff {z_eff:.3f} "
+              f"(that range is l = {int(round(np.pi/(max(a.rp_mpch)/d_c)))}-"
+              f"{int(round(np.pi/(min(a.rp_mpch)/d_c)))}, lmax is {lmax}).  "
+              f"Gating instead over the largest scales this map resolves, "
+              f"rp = {rp_cov:.0f}-{rp_cov_max:.0f} Mpc/h.", flush=True)
+    elif rp_cov > min(a.rp_mpch) * 1.05:
         print(f"  NOTE: NSIDE {a.nside} reaches only rp >= {rp_cov:.1f} Mpc/h "
               f"(l <= {lmax}); below that the pixel window, not the mock, sets "
               f"the power.  The gate is applied over the reachable part.",
@@ -498,7 +522,8 @@ def main():
                          cl_target, nbar_target, lmax=lmax, band=(b_lo, b_hi),
                          n_seeds=a.n_validate, tol=a.tol_large_scale)
     val["rp_mpch_requested"] = [min(a.rp_mpch), max(a.rp_mpch)]
-    val["rp_mpch_covered"] = [float(rp_cov), max(a.rp_mpch)]
+    val["rp_mpch_covered"] = [float(rp_cov), float(rp_cov_max)]
+    val["rp_band_widened"] = bool(widened)
     val["z_eff"] = z_eff
     a.out_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{a.sample}_NSIDE{a.nside:04d}"
