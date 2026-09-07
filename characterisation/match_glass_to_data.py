@@ -217,6 +217,17 @@ def rp_band(rp_lo, rp_hi, z_eff, lmax, cosmo=None):
     widened = False
     if lo > hi_clipped:
         lo, hi_clipped, widened = max(2, lmax // 4), lmax, True
+
+    # A band can also survive the clip while being too narrow to measure.  At
+    # z_eff 0.141 with lmax 64, rp = 20 Mpc/h lands at l = 64.1, so lo and hi both
+    # clip to 64 and the "band" is a single multipole -- 129 modes, and a ratio
+    # that scattered to 1.17 against a 10 per cent gate.  Widen downward until the
+    # band spans at least MIN_ELL multipoles, so the gate measures the mock rather
+    # than one noisy harmonic.
+    MIN_ELL = 8
+    if hi_clipped - lo + 1 < MIN_ELL:
+        lo = max(2, hi_clipped - MIN_ELL + 1)
+        widened = True
     rp_min_covered = np.pi / (hi_clipped / d_c) if hi_clipped else float("inf")
     rp_max_covered = np.pi / (lo / d_c) if lo else float("inf")
     return lo, hi_clipped, rp_min_covered, d_c, rp_max_covered, widened
