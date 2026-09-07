@@ -27,11 +27,24 @@ source oarsub/_campaign_env.sh
 TAG="${1:-${OAR_ARRAY_ID:-local}}"
 NITER="${2:-25}"
 NSEEDS="${3:-5}"
+# Optional comma-separated list of cells, so a failed subset can be rerun without
+# recomputing the ones that already produced a validated spectrum.  The array
+# index then selects from the list rather than being the cell number itself.
+CELLS="${4:-}"
 campaign_activate_env
 campaign_threads >/dev/null
 
 NSIDES=(32 64)
 IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 ))
+if [ -n "${CELLS}" ]; then
+    IFS=',' read -r -a CELL_LIST <<< "${CELLS}"
+    if [ "${IDX}" -ge "${#CELL_LIST[@]}" ]; then
+        echo "!! array index $(( IDX + 1 )) exceeds the ${#CELL_LIST[@]} cells requested" >&2
+        exit 1
+    fi
+    IDX="${CELL_LIST[$IDX]}"
+    echo "-- cell list ${CELLS}: this element is cell ${IDX}"
+fi
 SAMPLE="${SMB_SAMPLES[$(( IDX / 2 ))]}"
 NSIDE="${NSIDES[$(( IDX % 2 ))]}"
 

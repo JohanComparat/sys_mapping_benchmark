@@ -74,9 +74,20 @@ while [ $# -gt 0 ]; do
        sub "./oarsub/run_variance.sh ${TAG} 2000" ;;
     D) echo "== D  benchmark grid (1 job, cpumodel-pinned, core=8, 48 h)"
        sub "./oarsub/run_bench.sh ${TAG} 5 2" ;;
-    M) echo "== M  match each mock to its sample's large-scale clustering"
-       echo "      (array 18: 9 samples x NSIDE {32,64}, core=4, 6 h)"
-       sub "./oarsub/run_glassmatch.sh ${TAG} 25 5" ;;
+    M) # An optional comma-separated cell list reruns a subset, so a failed
+       # handful does not mean recomputing the cells that already produced a
+       # validated spectrum.
+       CELLS=""
+       if [[ "${1:-}" =~ ^[0-9]+(,[0-9]+)*$ ]]; then CELLS="$1"; shift; fi
+       if [ -n "${CELLS}" ]; then
+           N_M=$(awk -F, '{print NF}' <<< "${CELLS}")
+           echo "== M  matching, cells ${CELLS} only (${N_M} of 18, core=4, 6 h)"
+           sub "./oarsub/run_glassmatch.sh ${TAG} 25 5 ${CELLS}" --array "${N_M}"
+       else
+           echo "== M  match each mock to its sample's large-scale clustering"
+           echo "      (array 18: 9 samples x NSIDE {32,64}, core=4, 6 h)"
+           sub "./oarsub/run_glassmatch.sh ${TAG} 25 5"
+       fi ;;
     E) # E is the one family that takes a value from another: B's fitted amplitude.
        CALIB="${1:-}"
        if [ -z "${CALIB}" ]; then
