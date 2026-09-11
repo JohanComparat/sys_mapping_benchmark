@@ -59,6 +59,17 @@ else
     export SMB_PKG="${SMB_PKG:-${HOME}/${SMB_PKG_REMOTE:-software/sys_mapping}}"
 fi
 
+# Running a script out of the snapshot is not enough to import the library from
+# it.  The environment carries an editable install of sys_mapping, whose finder
+# redirects `import sys_mapping` to the checkout it was installed from whatever
+# the script path is -- so a snapshot job silently ran the live library while
+# reporting the snapshot's path in every traceback.  PYTHONPATH is consulted
+# before that finder, so it is what makes the snapshot take effect.
+case ":${PYTHONPATH:-}:" in
+    *":${SMB_PKG}:"*) ;;
+    *) export PYTHONPATH="${SMB_PKG}${PYTHONPATH:+:${PYTHONPATH}}" ;;
+esac
+
 campaign_activate_env () {
     local mamba_exe="${MAMBA_EXE:-${HOME}/miniforge3/bin/mamba}"
     if [ -x "${mamba_exe}" ]; then
@@ -95,6 +106,21 @@ for m in ("numpy", "scipy", "healpy", "jax", "blackjax", "emcee",
         missing.append(f"{m} ({type(e).__name__})")
 if missing:
     sys.exit("!! environment is missing: " + ", ".join(missing))
+
+# Which sys_mapping was imported, not which one is on disk.  The env carries an
+# editable install whose finder wins over the script's own location, so a job can
+# run a snapshot's scripts against the live library and say nothing about it.
+import os
+import sys_mapping
+got = os.path.realpath(os.path.dirname(sys_mapping.__file__))
+want = os.environ.get("SMB_PKG")
+print(f"sys_mapping from {got}")
+if want:
+    want = os.path.realpath(os.path.join(want, "sys_mapping"))
+    if got != want:
+        sys.exit(f"!! SMB_PKG is {want} but `import sys_mapping` resolved to "
+                 f"{got}.  The job would run a different library than the tag "
+                 f"records.  Check PYTHONPATH.")
 print("environment ok")
 PYEOF
 }
