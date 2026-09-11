@@ -11,8 +11,8 @@ Writes two files:
 These are consumed by the ``sys_mapping_paper`` repository (§7) and by
 ``docs/results_benchmark.rst`` in ``sys_mapping``.
 
-The undated benchmark table in ``Claude.md`` and the inline microsecond figures in
-``docs/methods.rst`` are superseded by this harness.
+The undated benchmark table in the developer notes and the inline microsecond figures
+in ``docs/methods.rst`` are superseded by this harness.
 
 Data generation reuses ``test_timing.py`` in this directory (``_make_data``,
 ``_generate_templates``) so the benchmark and the timing tests measure identical
