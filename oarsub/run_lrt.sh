@@ -34,7 +34,17 @@ campaign_activate_env
 campaign_threads >/dev/null
 
 NSIDES=(32 64)
-IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 ))
+# An optional comma-separated cell list (5th argument) selects a subset, so a
+# handful of cells can be re-run without recomputing the ones that are already
+# right -- an LRT cell costs 14 h and the grid has 18 of them.  Same pattern as
+# family M.  Without it the array index is the cell index, as before.
+CELLS="${5:-}"
+if [ -n "${CELLS}" ]; then
+    IFS=',' read -r -a _CELL_ARR <<< "${CELLS}"
+    IDX="${_CELL_ARR[$(( ${OAR_ARRAY_INDEX:-1} - 1 ))]}"
+else
+    IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 ))
+fi
 SAMPLE="${SMB_SAMPLES[$(( IDX / 2 ))]}"
 NSIDE="${NSIDES[$(( IDX % 2 ))]}"
 
@@ -62,7 +72,12 @@ fi
 # while the calibration depends on the large ones.
 MATCH_DIR="${SMB_RESULTS}/glass_match/${CALIB_TAG}"
 MATCH_ARG=()
-if [ -f "${MATCH_DIR}/${SAMPLE}_NSIDE$(printf '%04d' "${NSIDE}")_match.json" ]; then
+# Any matched spectrum for this SAMPLE will do -- load_matched_cl picks the finest
+# *validated* one and falls through when the fit at this resolution did not pass,
+# because the spectrum belongs to the sample and its footprint and resolution limits
+# what can be checked rather than what can be used.  Testing for the exact NSIDE here
+# would send a cell to the parametric null merely because its own resolution failed.
+if compgen -G "${MATCH_DIR}/${SAMPLE}_NSIDE*_match.json" >/dev/null; then
     MATCH_ARG=(--lrt-null-cl-file "${MATCH_DIR}")
     echo "== cell ${IDX}: ${SAMPLE} NSIDE=${NSIDE} n_mocks=${NMOCK} "\
          "null=MATCHED spectrum from ${CALIB_TAG}"

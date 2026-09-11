@@ -32,6 +32,7 @@ rsync -a --delete --exclude logs oarsub/ "${SNAP}/oarsub/"
 ln -sfn "${REPO_LOGS}" "${SNAP}/oarsub/logs"
 rsync -a --exclude '.git' --exclude '__pycache__' --exclude 'oarsub' \
       --exclude 'results' ./ "${SNAP}/" 2>/dev/null || true
+
 # Snapshot the library too.  Without this, SMB_PKG is one live checkout shared by
 # every running job: an rsync mid-campaign changes what array elements that have
 # not yet started will import, so two cells of the same tag can run different
@@ -127,8 +128,17 @@ while [ $# -gt 0 ]; do
        shift
        FB=""
        if [[ "${1:-}" =~ ^[0-9.eE+-]+$ ]]; then FB="$1"; shift; fi
-       echo "== E  mock-calibrated LRT (array 18, core=8, 48 h, per-cell amplitude from ${CALIB})"
-       sub "./oarsub/run_lrt.sh ${TAG} 50 ${CALIB} ${FB}" ;;
+       # An optional comma-separated cell list re-runs a subset.
+       ECELLS=""
+       if [[ "${1:-}" =~ ^[0-9]+(,[0-9]+)*$ ]]; then ECELLS="$1"; shift; fi
+       if [ -n "${ECELLS}" ]; then
+           N_E=$(awk -F, '{print NF}' <<< "${ECELLS}")
+           echo "== E  mock-calibrated LRT, cells ${ECELLS} only (${N_E} of 18, core=8, 48 h)"
+           sub "./oarsub/run_lrt.sh ${TAG} 50 ${CALIB} '${FB}' ${ECELLS}" --array "${N_E}"
+       else
+           echo "== E  mock-calibrated LRT (array 18, core=8, 48 h, per-cell amplitude from ${CALIB})"
+           sub "./oarsub/run_lrt.sh ${TAG} 50 ${CALIB} ${FB}"
+       fi ;;
     F) # 75 elements rarely fit beside B and C, so F is submitted in chunks with
        # an explicit offset.  Re-run `submit_campaign.sh <tag> F` as the queue
        # drains; campaign_status.sh names the seeds still missing.
@@ -151,7 +161,61 @@ while [ $# -gt 0 ]; do
              echo "   $(( TOTAL_F - OFF - N )) element(s) left:  ./oarsub/submit_campaign.sh ${TAG} F $(( OFF + N ))"
            fi
        fi ;;
-    *) echo "!! unknown family '${fam}' (expected A B C D E F M)"; exit 1 ;;
+    H) # H is two families in one: the six-method comparison on a non-linear
+       # response, and the ISD hyper-parameter sweep.  The sweep is ISD-only and
+       # costs ~0.07 s a fit, so it is submitted whole; the comparison carries
+       # MCMC-comb at 156 s a config and is chunked like F.
+       MODE="capability"
+       if [[ "${1:-}" =~ ^(capability|sweep)$ ]]; then MODE="$1"; shift; fi
+       # NSIDE is positional in the runner; OAR does not carry the environment.
+       HNS=32
+       if [[ "${1:-}" =~ ^(32|64|128|256)$ ]]; then HNS="$1"; shift; fi
+       if [ "${MODE}" = "sweep" ]; then
+           HWALL=2; [ "${HNS}" -ge 128 ] && HWALL=8
+           echo "== H  ISD hyper-parameter sweep at NSIDE ${HNS} (array 10 x 2 seeds, core=4, ${HWALL} h)"
+           sub "./oarsub/run_isdtests.sh ${TAG} sweep 2 0 ${HNS}" \
+               --array 10 -l "/nodes=1/core=4,walltime=${HWALL}:00:00"
+       else
+           TOTAL_H=25
+           FREE="$(campaign_free_slots)"
+           if [ "${FREE}" -gt 5 ]; then FREE=$(( FREE - 5 )); fi
+           OFF=0
+           if [[ "${1:-}" =~ ^[0-9]+$ ]]; then OFF="$1"; shift; fi
+           N=$(( TOTAL_H - OFF ))
+           if [ "${N}" -gt "${FREE}" ]; then N="${FREE}"; fi
+           if [ "${OFF}" -ge "${TOTAL_H}" ]; then
+               echo "== H  all ${TOTAL_H} elements already submitted"
+           elif [ "${N}" -le 0 ]; then
+               echo "== H  no queue room (${FREE} slots free); retry when E/F drain"
+           else
+               echo "== H  ISD capability tests at NSIDE ${HNS} (elements $(( OFF + 1 ))-$(( OFF + N )) of ${TOTAL_H}, core=8, 12 h)"
+               sub "./oarsub/run_isdtests.sh ${TAG} capability 2 ${OFF} ${HNS}" --array "${N}"
+               if [ $(( OFF + N )) -lt "${TOTAL_H}" ]; then
+                 echo "   $(( TOTAL_H - OFF - N )) element(s) left:  ./oarsub/submit_campaign.sh ${TAG} H $(( OFF + N ))"
+               fi
+           fi
+       fi ;;
+    P) # Regenerate the shipped LS10 weight products.  Cheap -- no LRT null --
+       # so it runs as a plain array with no chunking.  An optional argument
+       # gives the resolutions; the array size must match 9 x their count, and
+       # the #OAR --array header in the script covers the default four.
+       PNS="${1:-}"
+       if [ -n "${PNS}" ] && [[ "${PNS}" != [A-Z] ]]; then
+           shift
+           PNS="${PNS// /,}"          # oarsub takes one string; commas survive it
+           PN=$(tr ',' '\n' <<< "${PNS}" | grep -c .)
+           # SMB_P_ARRAY/SMB_P_OFFSET submit a slice, for a smoke test of one
+           # cell before committing the whole family to a code change.
+           P_N="${SMB_P_ARRAY:-$((9 * PN))}"
+           P_OFF="${SMB_P_OFFSET:-0}"
+           echo "== P  LS10 weight products, NSIDE ${PNS} (array ${P_N}, offset ${P_OFF}, core=8, 12 h)"
+           sub "./oarsub/run_ls10products.sh ${TAG} ${P_OFF} ${PNS}" \
+               -l "/nodes=1/core=8,walltime=12:00:00" --array "${P_N}"
+       else
+           echo "== P  LS10 weight products (array 36, core=8, 12 h)"
+           sub "./oarsub/run_ls10products.sh ${TAG}"
+       fi ;;
+    *) echo "!! unknown family '${fam}' (expected A B C D E F H M P)"; exit 1 ;;
   esac
 done
 

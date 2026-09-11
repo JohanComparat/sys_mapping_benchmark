@@ -7,7 +7,9 @@
 #
 # FAMILY F -- simulation recovery tests over seeds.
 #
-# 3 NSIDE x 25 elements x 2 seeds each = 150 runs (50 seeds per NSIDE).  Every
+# 3 NSIDE x 25 elements x 2 seeds each = 150 runs (50 seeds per NSIDE).
+# All six methods, ISD-3 included: it was absent from the runner's --methods
+# choices until the rewrite, so no ISD-3 column exists in any earlier campaign.  Every
 # published frac_helped is a fraction of ten from ONE realisation, so the +0.73
 # correlation the docs report has no error bar; seeds are the whole point here.
 #
@@ -33,6 +35,15 @@ OFF="${3:-0}"
 campaign_activate_env
 campaign_threads >/dev/null
 
+# ISD's stopping rule is a Delta chi^2 normalised on contamination-free mocks.
+# Without it the threshold is in raw Delta chi^2 units, the iteration keeps
+# re-selecting templates it has already corrected, and the amplitudes overshoot --
+# so the calibration is not optional here even though the flag is.  The null
+# depends on the footprint, resolution and surface density but not on the injected
+# contamination, so it is computed once per mock source and reused across all nine
+# configurations of a cell.
+ISD_NMOCK="${ISD_NMOCK:-30}"
+
 NSIDES=(32 64 128)
 CHUNKS=25
 IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 + OFF ))
@@ -47,7 +58,8 @@ for j in $(seq 0 $(( SPT - 1 ))); do
         --nside "${NSIDE}" \
         --n-glass 500000 \
         --glass-only \
-        --methods OLS ISD-1 ElasticNet MCMC-add MCMC-comb \
+        --methods OLS ISD-1 ISD-3 ElasticNet MCMC-add MCMC-comb \
+        --isd-n-mocks "${ISD_NMOCK}" \
         --syst-dir "${SMB_DATA}/systematics" \
         --seed "${SEED}" \
         --output-dir "${OUT}"

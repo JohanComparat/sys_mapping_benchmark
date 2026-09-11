@@ -12,7 +12,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source oarsub/_campaign_env.sh
 TAG="${1:?usage: campaign_status.sh <tag> [family...]}"; shift
-FAMS=("$@"); [ ${#FAMS[@]} -gt 0 ] || FAMS=(B C D E F)
+FAMS=("$@"); [ ${#FAMS[@]} -gt 0 ] || FAMS=(B C D E F H P)
 
 miss=0
 report () {   # report <label> <path>
@@ -63,6 +63,30 @@ E) echo "== E  mock-calibrated LRT  (expect 18 cells)"
      report "${s} NSIDE${n}" \
             "${R}/NSIDE$(printf '%04d' "${n}")/${s}_NSIDE$(printf '%04d' "${n}")_params.json"
    done; done ;;
+P) echo "== P  LS10 weight products  (expect 9 samples x NSIDE {32,64})"
+   R="${SMB_RESULTS}/ls10_products/${TAG}"
+   for s in "${SMB_SAMPLES[@]}"; do for n in 32 64; do
+     report "${s} NSIDE${n}" \
+            "${R}/NSIDE$(printf '%04d' "${n}")/${s}_NSIDE$(printf '%04d' "${n}")_WEIGHTS.fits"
+   done; done ;;
+
+H) echo "== H  ISD capability tests  (expect 50 seeds at NSIDE ${SMB_H_NSIDE:-32})"
+   R="${SMB_RESULTS}/isdtests/${TAG}/capability"
+   HN="$(printf '%04d' "${SMB_H_NSIDE:-32}")"
+   for k in $(seq 0 49); do
+     # Tags written before the runner stopped naming nside in its output path
+     # carry capability/nside%04d/seed%03d/nside%04d/; accept either rather
+     # than reporting 50 present cells as missing.
+     SD="seed$(printf '%03d' "${k}")"
+     if [ -f "${R}/${SD}/nside${HN}/results_summary.json" ]; then
+       report "seed${k} NSIDE${SMB_H_NSIDE:-32}" \
+              "${R}/${SD}/nside${HN}/results_summary.json"
+     else
+       report "seed${k} NSIDE${SMB_H_NSIDE:-32}" \
+              "${R}/nside${HN}/${SD}/nside${HN}/results_summary.json"
+     fi
+   done ;;
+
 F) echo "== F  simulation tests  (expect 50 seeds x 3 NSIDE)"
    R="${SMB_RESULTS}/simulations/${TAG}"
    for k in $(seq 0 49); do for n in 32 64 128; do
