@@ -1,0 +1,48 @@
+{
+  "sample": "LS10_VLIM_ANY_9.5_Mstar_12.0_0.05_z_0.12_N_1432502",
+  "nside": 64,
+  "z_eff": 0.09681721776723862,
+  "comoving_distance_mpch": 283.60546135214986,
+  "rp_mpch": [
+    5.0,
+    20.0
+  ],
+  "ell_band": [
+    45,
+    128
+  ],
+  "ell_band_reachable": false,
+  "rows": {
+    "data": {
+      "fsky": 0.4402058919270833,
+      "nbar": 65.53288348662014,
+      "cl_large": 8.439044218603514e-05
+    },
+    "uchuu": {
+      "n_overlap_pix": 2245,
+      "fsky_overlap": 0.042460123697916664,
+      "cl_large_common": 9.6295339657476e-05,
+      "nbar": 59.28552338530067,
+      "ratio_to_data_common": 1.0619350373234804,
+      "dir": "/home/comparat/data/Uchuu/FullSky/mock_catalogues/MOCK_VLIM_ANY_9.78_Mstar_12.0_0.05_z_0.12_N_0408958"
+    },
+    "data_common_mask": {
+      "cl_large_common": 9.067912468561209e-05,
+      "nbar": 66.08912314326786
+    },
+    "glass_default": {
+      "cl_large": 6.618733536319801e-07,
+      "ratio_to_data": 0.007842989519748083,
+      "nbar": 66.3275292323335,
+      "cl_large_common": 9.019569379931243e-07,
+      "ratio_to_data_common": 0.009946687742302793
+    },
+    "glass_matched": {
+      "cl_large": 7.681135073381156e-05,
+      "ratio_to_data": 0.9101901677974883,
+      "nbar": 66.84536904376762,
+      "cl_large_common": 7.951350245651723e-05,
+      "ratio_to_data_common": 0.8768666739141286
+    }
+  }
+}

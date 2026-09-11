@@ -14,11 +14,21 @@ oarsub/site.sh
 oarsub/logs/
 
 # Pulled campaign trees that are not the canonical copy.  pull_results.sh rsyncs
-# the whole remote results/ dir, so a pull brings tags other than the one named:
-# glass_calibration/20260904 is byte-identical to 20260904b, and 20260904fit is a
-# one-cell pilot.  Committing either would publish the same measurement twice.
-results/campaign/*/glass_calibration/20260904/
-results/campaign/*/glass_calibration/20260904fit/
+# the whole remote results/ dir, so every pull brings back every measurement that
+# is still on the cluster, not only the tag it was asked for.  A measurement is
+# committed once, under the tag that produced it; the copies a later pull drags
+# along are byte-identical and are ignored here rather than published again.
+# These patterns do not untrack the canonical copies, which are already tracked.
+results/campaign/*/glass_calibration/
+results/campaign/*/variance_inflation/20260904/
+# glass_match is committed once, under the most complete pull; the copies under
+# the earlier tags are byte-identical to it.
+results/campaign/20260907c/glass_match/
+results/campaign/20260907m/glass_match/
+# A 10-seed fragment in the pre-rewrite layout (sweep/seedNNN/setNNN/ rather than
+# sweep/nsideNNNN/seedNNN.json), superseded by the family-H sweep.  34 MB of a run
+# no published number rests on.
+results/campaign/*/isdtests/*/sweep/
 results/campaign/*/simulations/
 results/campaign/*/benchmarks/
 results/campaign/*/ls10_mocklrt/
