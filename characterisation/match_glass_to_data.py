@@ -233,9 +233,38 @@ def rp_band(rp_lo, rp_hi, z_eff, lmax, cosmo=None):
     return lo, hi_clipped, rp_min_covered, d_c, rp_max_covered, widened
 
 
+def density_nside(n_gal, fsky, nside_max, min_per_pixel=10.0, nside_cap=64):
+    """Coarsest-needed NSIDE at which the density is not shot-noise dominated.
+
+    Clustering and density do not have to be measured on the same map, and for
+    the sparse samples they must not be.  Reaching rp = 10 Mpc/h at z_eff 0.27
+    needs NSIDE 128, where the logM >= 11.5 sample holds 1.4 galaxies per pixel
+    and its density ratio scatters by 5 per cent between realisations -- an
+    estimate made of shot noise.  Density is a scalar and can be measured on a
+    coarser map, where it is well determined, while the spectrum is measured on
+    the fine one.
+
+    Halves NSIDE until the mean occupancy reaches ``min_per_pixel``.
+    """
+    # Capped at 64 regardless of the matching resolution.  NSIDE 128 is finer
+    # than a mean density needs: it is one scalar over the whole footprint, and
+    # measuring it on a finer map buys nothing while making it more sensitive to
+    # the sparse samples' shot noise.  At 64 the LS10 samples hold 24 to 153
+    # galaxies per pixel, which is a measurement.
+    ns = int(min(nside_max, nside_cap))
+    while ns > 1:
+        nbar = n_gal / (fsky * 12.0 * ns * ns)
+        if nbar >= min_per_pixel:
+            return ns
+        ns //= 2
+    return 1
+
+
 def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
                    cl_target, nbar_target, *, lmax, l_large=32, n_seeds=8,
-                   tol=0.10, tol_density=0.03, seed0=990001, band=None, verbose=True):
+                   tol=0.10, tol_density=0.03, seed0=990001, band=None,
+                   dens_nside=None, dens_nbar_target=None,
+                   dens_mask=None, verbose=True):
     """Does a matched spectrum actually reproduce the data's large-scale power?
 
     Run BEFORE a mock is used for anything.  The matching loop optimises against
@@ -271,8 +300,15 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
         ng = sm.pixelize_catalog(cat["ra"], cat["dec"], nside)
         cl_m, nbar_m, _, _ = measure_signal_cl(ng, mock_randoms, nside, lmax)
         dm, _g = sm.compute_overdensity(ng, mock_randoms)
-        cls.append(cl_m); nbars.append(nbar_m)
-        sigs.append(float(np.std(np.asarray(dm))))
+        cls.append(cl_m); sigs.append(float(np.std(np.asarray(dm))))
+        if dens_nside is not None:
+            # Density on its own, coarser map: the same galaxies, binned so the
+            # estimate is a measurement rather than a count of a handful.
+            ngd = np.asarray(sm.pixelize_catalog(cat["ra"], cat["dec"],
+                                                 dens_nside), float)
+            nbars.append(float(ngd[dens_mask].mean()))
+        else:
+            nbars.append(nbar_m)
     cl_mock = np.mean(cls, axis=0)
     mock_ls = float(np.sum(w * cl_mock[lo:hi + 1]) / n_modes)
 
@@ -287,7 +323,7 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
     # that against a flat 3 per cent gate is partly judging noise -- the same
     # mistake as setting a clustering tolerance below the cosmic-variance floor.
     # So the gate is widened by the measured uncertainty of its own estimate.
-    nb = np.asarray(nbars, dtype=float) / nbar_target
+    nb = np.asarray(nbars, dtype=float) / (dens_nbar_target or nbar_target)
     d_err = abs(float(nb.mean()) - 1.0)
     d_unc = float(nb.std(ddof=1) / np.sqrt(len(nb))) if len(nb) > 1 else 0.0
     passed = bool(np.isfinite(ratio) and abs(ratio - 1.0) <= tol
@@ -299,6 +335,7 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
            "density_ratio_uncertainty": d_unc,
            "density_gate": tol_density + d_unc,
            "sigma_hat_mock": float(np.mean(sigs)),
+           "density_nside": dens_nside, "density_nbar_data": dens_nbar_target,
            "seeds": [seed0 + k for k in range(n_seeds)]}
     if verbose:
         verdict = "PASS" if passed else "FAIL"
@@ -480,6 +517,9 @@ def main():
     ap.add_argument("--tol-large-scale", type=float, default=0.10,
                     help="the gate: mock large-scale power must be within this "
                          "fraction of the data's before the mock may be used")
+    ap.add_argument("--min-per-pixel", type=float, default=10.0,
+                    help="density is measured on a map coarse enough for at "
+                         "least this many galaxies per pixel")
     ap.add_argument("--n-validate", type=int, default=16,
                     help="unseen seeds used for the gate")
     ap.add_argument("--lmax-match", type=float, default=None,
@@ -545,11 +585,26 @@ def main():
               f"(l <= {lmax}); below that the pixel window, not the mock, sets "
               f"the power.  The gate is applied over the reachable part.",
           flush=True)
+    # Density is measured on its own, coarser map so the estimate is not made of
+    # shot noise; the spectrum stays on the fine one.
+    d_ns = density_nside(len(d), fsky, a.nside, min_per_pixel=a.min_per_pixel)
+    ngd = np.asarray(sm.pixelize_catalog(np.asarray(d["RA"]), np.asarray(d["DEC"]),
+                                         d_ns), float)
+    nrd = np.asarray(sm.pixelize_catalog(np.asarray(r["RA"]), np.asarray(r["DEC"]),
+                                         d_ns), float)
+    d_mask = nrd > 0
+    d_nbar = float(ngd[d_mask].mean())
+    print(f"  density measured at NSIDE {d_ns} "
+          f"({d_nbar:.1f} galaxies per pixel), clustering at NSIDE {a.nside}",
+          flush=True)
+
     val = validate_match(cl_fit, a.nside, n_total, z_edges, nz,
                          uniform_randoms_on(good, float(np.asarray(nr)[good].mean())),
                          cl_target, nbar_target, lmax=lmax, band=(b_lo, b_hi),
                          n_seeds=a.n_validate, tol=a.tol_large_scale,
-                         tol_density=a.tol_density)
+                         tol_density=a.tol_density,
+                         dens_nside=d_ns, dens_nbar_target=d_nbar,
+                         dens_mask=d_mask)
     val["rp_mpch_requested"] = [min(a.rp_mpch), max(a.rp_mpch)]
     val["rp_mpch_covered"] = [float(rp_cov), float(rp_cov_max)]
     val["rp_band_widened"] = bool(widened)
