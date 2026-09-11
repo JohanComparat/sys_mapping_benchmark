@@ -65,6 +65,11 @@ fi
 # the script path is -- so a snapshot job silently ran the live library while
 # reporting the snapshot's path in every traceback.  PYTHONPATH is consulted
 # before that finder, so it is what makes the snapshot take effect.
+# A 12-hour job whose stdout is a file is block-buffered, so its progress sits in
+# an 8 KB buffer and the log shows nothing for hours.  There is no throughput to
+# protect here -- these jobs print tens of lines, not thousands.
+export PYTHONUNBUFFERED=1
+
 case ":${PYTHONPATH:-}:" in
     *":${SMB_PKG}:"*) ;;
     *) export PYTHONPATH="${SMB_PKG}${PYTHONPATH:+:${PYTHONPATH}}" ;;
