@@ -32,6 +32,35 @@ rsync -a --delete --exclude logs oarsub/ "${SNAP}/oarsub/"
 ln -sfn "${REPO_LOGS}" "${SNAP}/oarsub/logs"
 rsync -a --exclude '.git' --exclude '__pycache__' --exclude 'oarsub' \
       --exclude 'results' ./ "${SNAP}/" 2>/dev/null || true
+# Snapshot the library too.  Without this, SMB_PKG is one live checkout shared by
+# every running job: an rsync mid-campaign changes what array elements that have
+# not yet started will import, so two cells of the same tag can run different
+# code and the tag records neither.  _campaign_env.sh prefers ${SNAP}/pkg when it
+# exists.
+_PKG_SRC="${SMB_PKG:-${HOME}/${SMB_PKG_REMOTE:-software/sys_mapping}}"
+if [ -d "${_PKG_SRC}/sys_mapping" ]; then
+    rsync -a --exclude '.git' --exclude '__pycache__' --exclude '_build' \
+          --exclude 'results' "${_PKG_SRC}/" "${SNAP}/pkg/"
+    {
+        echo "source:   ${_PKG_SRC}"
+        echo "snapshot: $(date -Is)"
+        if [ -r "${_PKG_SRC}/PKG_VERSION.txt" ]; then
+            # A staged copy carries no .git; the stager writes this instead.
+            sed 's/^/          /' "${_PKG_SRC}/PKG_VERSION.txt"
+        elif command -v git >/dev/null && [ -d "${_PKG_SRC}/.git" ]; then
+            echo "head:     $(git -C "${_PKG_SRC}" rev-parse HEAD 2>/dev/null || echo unknown)"
+            if [ -n "$(git -C "${_PKG_SRC}" status --porcelain 2>/dev/null)" ]; then
+                echo "dirty:    yes"
+                git -C "${_PKG_SRC}" status --porcelain 2>/dev/null | sed 's/^/          /'
+            else
+                echo "dirty:    no"
+            fi
+        fi
+    } > "${SNAP}/pkg_version.txt"
+    echo "== package snapshot: ${SNAP}/pkg  ($(sed -n 's/^head: *//p' "${SNAP}/pkg_version.txt" | cut -c1-12))"
+else
+    echo "!! no package at ${_PKG_SRC}; jobs will read the live checkout" >&2
+fi
 echo "== snapshot: ${SNAP}"
 cd "${SNAP}"
 

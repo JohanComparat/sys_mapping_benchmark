@@ -45,7 +45,19 @@ export SMB_RESULTS="${WORK}/results"
 
 # Where the staged inputs live on the cluster.
 export SMB_DATA="${SMB_DATA:-${HOME}/${SMB_DATA_REMOTE:-data/legacysurvey/dr10}}"
-export SMB_PKG="${SMB_PKG:-${HOME}/${SMB_PKG_REMOTE:-software/sys_mapping}}"
+
+# The library, like the job scripts, is read from the campaign's own snapshot
+# when one exists.  A single live checkout shared by every running job means a
+# rsync mid-campaign changes what array elements that have not yet started will
+# import, so two cells of one tag can run different code and nothing records
+# which.  submit_campaign.sh writes ${REPO}/pkg alongside ${REPO}/oarsub;
+# falling back to the live checkout keeps a bare `./oarsub/run_*.sh` working
+# from the working tree.
+if [ -d "${REPO}/pkg/sys_mapping" ]; then
+    export SMB_PKG="${SMB_PKG:-${REPO}/pkg}"
+else
+    export SMB_PKG="${SMB_PKG:-${HOME}/${SMB_PKG_REMOTE:-software/sys_mapping}}"
+fi
 
 campaign_activate_env () {
     local mamba_exe="${MAMBA_EXE:-${HOME}/miniforge3/bin/mamba}"

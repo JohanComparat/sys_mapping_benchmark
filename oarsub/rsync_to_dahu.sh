@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Push the two checkouts and the staged input data to the cluster.
-# Runs on YOUR machine.   ./oarsub/rsync_to_dahu.sh [--dry-run] [tier0|tier1|tier2|code]
+# Runs on YOUR machine.   ./oarsub/rsync_to_dahu.sh [--dry-run] [tier0|tier1|tier2|code|bench]
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source oarsub/site.sh 2>/dev/null || true
@@ -45,9 +45,16 @@ R=(rsync -avz --mkpath ${DRY} --rsh="${RSH}" --timeout=300
    --exclude '.claude' --exclude '.pytest_cache' --exclude '.coverage'
    --exclude 'dist' --exclude 'dist_*' --exclude '*.ipynb_checkpoints')
 
-if [ "$WHAT" = all ] || [ "$WHAT" = code ]; then
+# `bench` is `code` without the package.  Until submit_campaign.sh snapshots it,
+# the package is one live checkout that every running job imports from, so
+# pushing it mid-campaign changes what array elements that have not yet started
+# will run.  Use `bench` to ship a job-script fix while a campaign is in flight.
+if [ "$WHAT" = all ] || [ "$WHAT" = code ] || [ "$WHAT" = bench ]; then
   echo "== code: benchmark repo -> ${HOST}:${BENCH_REMOTE}"
   rs --exclude 'results/*' ./ "${HOST}:${BENCH_REMOTE}/"
+fi
+
+if [ "$WHAT" = all ] || [ "$WHAT" = code ]; then
   echo "== code: sys_mapping package -> ${HOST}:${PKG_REMOTE}"
   # The package only: its data/ and results/ are outputs and are regenerable.
   rs --exclude 'data/*' --exclude 'results/*' --exclude 'docs/_build' \

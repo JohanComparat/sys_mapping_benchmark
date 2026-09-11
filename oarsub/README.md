@@ -27,6 +27,7 @@ under-sampled to the edge of meaning:
 | D | benchmark timings | stops at NSIDE 64; every MCMC row is one draw, so `mad = 0` |
 | E | mock-calibrated LRT | the null used mocks ~25× under-clustered (mock σ̂ 0.117 vs data 0.397); `p` floored at 0.032 by N=31 |
 | F | simulation tests | one realisation per config — every `frac_helped` is a fraction of ten |
+| H | ISD capability | every campaign injects contamination linear in the template, so nothing can separate `ISD-1` from `ISD-3`, and with all five templates contaminated greedy selection is untestable |
 
 ## Order
 
@@ -60,6 +61,37 @@ lost once already. A partial campaign therefore stays readable.
 
 `campaign_status.sh` names the *missing cells* rather than counting files: a
 count that says 34/36 does not tell you which two to resubmit.
+
+## What a tag runs
+
+`submit_campaign.sh` snapshots three things into `$SMB_WORK/campaigns/<tag>/`
+before submitting anything: `oarsub/`, the benchmark repo, and **the
+`sys_mapping` package** under `pkg/`. `_campaign_env.sh` points `SMB_PKG` at
+that snapshot whenever it exists, so a tag runs one version of the library from
+first cell to last.
+
+Without the package snapshot, `SMB_PKG` is a single live checkout that every
+running job imports from. An `rsync_to_dahu.sh code` mid-campaign then changes
+what array elements that have not yet started will run, so two cells of one tag
+execute different code and the tag records neither. Use `rsync_to_dahu.sh bench`
+to ship a job-script fix while a campaign is in flight: it pushes the benchmark
+repo and leaves the package alone.
+
+`pkg_version.txt` beside the snapshot records the commit and whether the tree was
+dirty. To submit against a package other than the live checkout — a staged copy
+carrying changes the in-flight jobs must not see — set `SMB_PKG` for the
+submission:
+
+```bash
+rsync -az --exclude .git ~/software/sys_mapping/ dahu:software/sys_mapping_next/
+SMB_PKG=$HOME/software/sys_mapping_next ./oarsub/submit_campaign.sh <tag> P 32,64
+```
+
+A staged copy has no `.git`, so write a `PKG_VERSION.txt` into it and the
+snapshot will record that instead.
+
+`SMB_P_ARRAY` and `SMB_P_OFFSET` submit a slice of family P, for a one-cell smoke
+test before committing the whole family to a code change.
 
 ## Environment
 
