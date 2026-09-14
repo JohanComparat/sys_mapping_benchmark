@@ -189,7 +189,8 @@ while [ $# -gt 0 ]; do
     P) # Regenerate the shipped LS10 weight products.  Cheap -- no LRT null --
        # so it runs as a plain array with no chunking.  An optional argument
        # gives the resolutions; the array size must match 9 x their count, and
-       # the #OAR --array header in the script covers the default four.
+       # the #OAR --array header in the script covers the default four.  "auto"
+       # gives each sample its own resolution from its occupancy, one cell each.
        PNS="${1:-}"
        if [ -n "${PNS}" ] && [[ "${PNS}" != [A-Z] ]]; then
            shift

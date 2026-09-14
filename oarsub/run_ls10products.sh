@@ -32,6 +32,12 @@
 # and the list silently truncates to its first entry.
 #
 #   oarsub --project <proj> -S "./oarsub/run_ls10products.sh <tag> [offset] [128,256]"
+#
+# "auto" in place of the list gives each sample its own resolution: the finest
+# NSIDE up to NSIDE_MAX (128) at which its footprint holds MIN_PER_PIXEL (25)
+# galaxies per pixel on average.  One cell per sample, array 9.
+#
+#   oarsub --project <proj> -S "./oarsub/run_ls10products.sh <tag> 0 auto"
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source oarsub/_campaign_env.sh
@@ -45,6 +51,48 @@ campaign_threads >/dev/null
 # ISD's stopping rule is a Delta chi^2 normalised on contamination-free mocks;
 # without it the threshold is in raw units and the amplitudes overshoot.
 ISD_NMOCK="${ISD_NMOCK:-30}"
+
+CATDIR="${SMB_DATA}/sweep/BGS_VLIM_Mstar"
+
+if [ "${NSIDE_LIST}" = "auto" ]; then
+    NSIDE_MAX="${NSIDE_MAX:-128}"
+    MIN_PER_PIXEL="${MIN_PER_PIXEL:-25}"
+    IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 + OFF ))
+    if [ "${IDX}" -ge ${#SMB_SAMPLES[@]} ]; then
+        echo "!! cell ${IDX} is past the end of SMB_SAMPLES (${#SMB_SAMPLES[@]}); " \
+             "auto mode takes an array of ${#SMB_SAMPLES[@]}" >&2
+        exit 1
+    fi
+    SAMPLE="${SMB_SAMPLES[${IDX}]}"
+    # Templates at the finest resolution; the analysis downgrades them to the one
+    # the occupancy rule chooses.
+    TPLDIR="${SMB_DATA}/systematics/$(printf '%04d' "${NSIDE_MAX}")"
+    OUT="${SMB_RESULTS}/ls10_products/${TAG}/auto"
+    mkdir -p "${OUT}"
+    echo "== cell ${IDX}: ${SAMPLE} NSIDE<=${NSIDE_MAX} at >=${MIN_PER_PIXEL} galaxies/pixel" \
+         "isd_n_mocks=${ISD_NMOCK}"
+    python "${SMB_PKG}/scripts/run_ls10_analysis.py" \
+        --catalog-dir "${CATDIR}" \
+        --sample "${SAMPLE}" \
+        --template-dir "${TPLDIR}" \
+        --nside "${NSIDE_MAX}" \
+        --min-per-pixel "${MIN_PER_PIXEL}" \
+        --sampler auto \
+        --isd-n-mocks "${ISD_NMOCK}" \
+        --null-cl-file "${REPO}/matched_spectra" \
+        --no-rst \
+        --output-dir "${OUT}"
+    # The chosen resolution is in the filename; there is exactly one for the sample.
+    shopt -s nullglob
+    WEIGHTS=("${OUT}/${SAMPLE}"_NSIDE*_WEIGHTS.fits)
+    if [ "${#WEIGHTS[@]}" -ne 1 ]; then
+        echo "!! expected one ${SAMPLE}_NSIDE*_WEIGHTS.fits in ${OUT}, found ${#WEIGHTS[@]}" >&2
+        exit 1
+    fi
+    python "${REPO}/oarsub/check_ls10_products.py" "${WEIGHTS[0]}" || exit 1
+    echo "== ls10products cell ${IDX} DONE on $(hostname)"
+    exit 0
+fi
 
 IFS=',' read -r -a NSIDES <<< "${NSIDE_LIST}"
 # A cell index past the end of SMB_SAMPLES means the array size and the
@@ -61,7 +109,6 @@ fi
 SAMPLE="${SMB_SAMPLES[$(( IDX / NN ))]}"
 NSIDE="${NSIDES[$(( IDX % NN ))]}"
 
-CATDIR="${SMB_DATA}/sweep/BGS_VLIM_Mstar"
 TPLDIR="${SMB_DATA}/systematics/$(printf '%04d' "${NSIDE}")"
 OUT="${SMB_RESULTS}/ls10_products/${TAG}/NSIDE$(printf '%04d' "${NSIDE}")"
 mkdir -p "${OUT}"
