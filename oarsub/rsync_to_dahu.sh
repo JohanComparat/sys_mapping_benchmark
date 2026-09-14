@@ -40,9 +40,12 @@ APPEND=()
 RSH="ssh -o ServerAliveInterval=20 -o ServerAliveCountMax=6 -o TCPKeepAlive=yes"
 R=(rsync -avz --mkpath ${DRY} --rsh="${RSH}" --timeout=300
    --partial
-   --exclude '.git' --exclude '__pycache__'
-   --exclude '*.pyc' --exclude '*.egg-info' --exclude 'oarsub/logs/*'
-   --exclude '.claude' --exclude '.pytest_cache' --exclude '.coverage'
+   # Every hidden directory except .github: editor and tool state, caches and
+   # VCS metadata all live in one, and the cluster needs none of them.
+   --exclude '.github/' --include '.github/***'
+   --exclude '.*/' --exclude '.coverage'
+   --exclude '__pycache__' --exclude '*.pyc' --exclude '*.egg-info'
+   --exclude 'oarsub/logs/*'
    --exclude 'dist' --exclude 'dist_*' --exclude '*.ipynb_checkpoints')
 
 # `bench` is `code` without the package.  Until submit_campaign.sh snapshots it,
