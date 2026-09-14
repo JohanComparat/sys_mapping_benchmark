@@ -57,6 +57,9 @@ CATDIR="${SMB_DATA}/sweep/BGS_VLIM_Mstar"
 if [ "${NSIDE_LIST}" = "auto" ]; then
     NSIDE_MAX="${NSIDE_MAX:-128}"
     MIN_PER_PIXEL="${MIN_PER_PIXEL:-25}"
+    # 400 realisations put the family-wise p-value floor at 0.0025, below the 3-sigma
+    # level of 0.0027; GLASS draws one in about 1.5 s at NSIDE 128.
+    SIG_NMOCK="${SIG_NMOCK:-400}"
     IDX=$(( ${OAR_ARRAY_INDEX:-1} - 1 + OFF ))
     if [ "${IDX}" -ge ${#SMB_SAMPLES[@]} ]; then
         echo "!! cell ${IDX} is past the end of SMB_SAMPLES (${#SMB_SAMPLES[@]}); " \
@@ -77,6 +80,7 @@ if [ "${NSIDE_LIST}" = "auto" ]; then
         --template-dir "${TPLDIR}" \
         --nside "${NSIDE_MAX}" \
         --min-per-pixel "${MIN_PER_PIXEL}" \
+        --significance-n-mocks "${SIG_NMOCK}" \
         --sampler auto \
         --isd-n-mocks "${ISD_NMOCK}" \
         --null-cl-file "${REPO}/matched_spectra" \
