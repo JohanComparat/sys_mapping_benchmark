@@ -75,6 +75,7 @@ python "${SMB_PKG}/scripts/run_ls10_analysis.py" \
     --nside "${NSIDE}" \
     --sampler auto \
     --isd-n-mocks "${ISD_NMOCK}" \
+    --null-cl-file "${REPO}/matched_spectra" \
     --no-rst \
     --output-dir "${OUT}"
 

@@ -118,26 +118,17 @@ while [ $# -gt 0 ]; do
            echo "      (array 9: one per sample, NSIDE set to reach rp=10 Mpc/h, core=4, 12 h)"
            sub "./oarsub/run_glassmatch.sh ${TAG} 25 5"
        fi ;;
-    E) # E is the one family that takes a value from another: B's fitted amplitude.
-       CALIB="${1:-}"
-       if [ -z "${CALIB}" ]; then
-           echo "!! family E needs family B's calibration tag:" >&2
-           echo "   ./oarsub/submit_campaign.sh ${TAG} E <calib_tag> [fallback_amplitude]" >&2
-           exit 1
-       fi
-       shift
-       FB=""
-       if [[ "${1:-}" =~ ^[0-9.eE+-]+$ ]]; then FB="$1"; shift; fi
+    E) # The null is each sample's matched spectrum, carried in the snapshot.
        # An optional comma-separated cell list re-runs a subset.
        ECELLS=""
        if [[ "${1:-}" =~ ^[0-9]+(,[0-9]+)*$ ]]; then ECELLS="$1"; shift; fi
        if [ -n "${ECELLS}" ]; then
            N_E=$(awk -F, '{print NF}' <<< "${ECELLS}")
            echo "== E  mock-calibrated LRT, cells ${ECELLS} only (${N_E} of 18, core=8, 48 h)"
-           sub "./oarsub/run_lrt.sh ${TAG} 50 ${CALIB} '${FB}' ${ECELLS}" --array "${N_E}"
+           sub "./oarsub/run_lrt.sh ${TAG} 50 ${ECELLS}" --array "${N_E}"
        else
-           echo "== E  mock-calibrated LRT (array 18, core=8, 48 h, per-cell amplitude from ${CALIB})"
-           sub "./oarsub/run_lrt.sh ${TAG} 50 ${CALIB} ${FB}"
+           echo "== E  mock-calibrated LRT (array 18, core=8, 48 h)"
+           sub "./oarsub/run_lrt.sh ${TAG} 50"
        fi ;;
     F) # 75 elements rarely fit beside B and C, so F is submitted in chunks with
        # an explicit offset.  Re-run `submit_campaign.sh <tag> F` as the queue
