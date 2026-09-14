@@ -12,17 +12,24 @@ are kept here. `load_matched_cl` reads the directory directly.
 
 ## Coverage
 
-| Sample, log M* ≥ | NSIDE 32 | NSIDE 64 | NSIDE 128 |
-|---|---|---|---|
-| 9.0, 9.5 | yes | yes | from NSIDE 64 |
-| 10.0 to 11.25 | yes | yes | yes |
-| 11.5 | yes | from NSIDE 128 | yes |
+| Sample, log M* ≥ | NSIDE 32 | NSIDE 64 |
+|---|---|---|
+| 9.0 to 11.25 | yes | yes |
+| 11.5 | yes | failed its large-scale check |
 
-Three cells have no validated spectrum at their own resolution, and `load_matched_cl`
-serves the finest validated one for the sample instead. The spectrum belongs to the
-sample and its footprint; resolution limits what can be checked, not what can be used.
-A coarser spectrum used at a finer resolution is extended flat past its last measured
-multipole by `sanitise_cl`, and a finer one is truncated.
+`load_matched_cl` serves the exact resolution when it passed, otherwise the validated fit
+nearest at or above the requested resolution, otherwise the finest below. So an NSIDE 128
+analysis uses the sample's NSIDE 64 fit, extended flat past its last multipole by
+`sanitise_cl`, NSIDE 16 uses NSIDE 32, and log M* ≥ 11.5 at NSIDE 64 uses NSIDE 32. The
+spectrum belongs to the sample and its footprint; resolution limits what can be checked,
+not what can be used.
+
+The seven NSIDE 128 fits are in `../matched_spectra_withdrawn/`. Their large-scale power
+passes (ratios 0.945 to 1.013), but their `validation.passed` was written by a density
+gate evaluated on the NSIDE 128 map, where the sparse samples hold one to six galaxies
+per pixel and the density ratio is mostly shot noise. Measured on a map of at most NSIDE
+64 their density errs by about 7% against a 3.3% tolerance, so they are not used for
+nulls. They remain usable for clustering-only comparisons.
 
 ## Provenance
 
