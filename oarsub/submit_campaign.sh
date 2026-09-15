@@ -6,6 +6,7 @@
 #   ./oarsub/submit_campaign.sh <tag> B C D F      # the independent families
 #   ./oarsub/submit_campaign.sh <tag> M            # match the mocks per sample
 #   ./oarsub/submit_campaign.sh <tag> E <calib_tag> # LRT, after M (or B)
+#   ./oarsub/submit_campaign.sh <tag> R            # sys_mapping results-page runs
 #
 # The submitting environment is NOT propagated to OAR jobs on this site, so
 # every setting a job needs is passed positionally rather than exported.
@@ -207,7 +208,14 @@ while [ $# -gt 0 ]; do
            echo "== P  LS10 weight products (array 36, core=8, 12 h)"
            sub "./oarsub/run_ls10products.sh ${TAG}"
        fi ;;
-    *) echo "!! unknown family '${fam}' (expected A B C D E F H M P)"; exit 1 ;;
+    R) # The runs behind the sys_mapping results pages, one element per page run.
+       # An optional offset and count submit a slice, e.g. "R 2 1" for element 3 only.
+       R_OFF=0; R_N=5
+       if [[ "${1:-}" =~ ^[0-9]+$ ]]; then R_OFF="$1"; shift; fi
+       if [[ "${1:-}" =~ ^[0-9]+$ ]]; then R_N="$1"; shift; fi
+       echo "== R  results-page runs (elements $(( R_OFF + 1 ))-$(( R_OFF + R_N )) of 5, core=8, 48 h)"
+       sub "./oarsub/run_results_pages.sh ${TAG} ${R_OFF}" --array "${R_N}" ;;
+    *) echo "!! unknown family '${fam}' (expected A B C D E F H M P R)"; exit 1 ;;
   esac
 done
 

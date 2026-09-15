@@ -38,6 +38,8 @@ mkdir -p "${OUT}"
 # it was measured on is not reproducible.
 { echo "host=$(hostname)"; echo "ncore=${NCORE}"; echo "date=$(date -Is)";
   grep -m1 'model name' /proc/cpuinfo || true; } > "${OUT}/machine.txt"
+# machine.json names the benchmark repo's commit; the library's is in the snapshot.
+[ -r "${REPO}/pkg_version.txt" ] && cp "${REPO}/pkg_version.txt" "${OUT}/"
 
 echo "== benchmark grid, n_repeat=${NREP}, ${NCORE} cores"
 # -u is not cosmetic: Python block-buffers stdout when it is a file rather than a

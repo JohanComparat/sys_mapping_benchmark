@@ -9,6 +9,12 @@ script, written against the implemented full-sum path
 ``(n_sys, n_sys, n_bins)`` correlation matrix and
 :func:`sys_mapping.correction.debias_params_matrix`).
 
+The templates are standardised on the sample's footprint, the rule of
+:func:`sys_mapping.maps.compute_overdensity` applied to its randoms (``--rand-file``),
+which reproduces the basis the products record; the amplitudes read from
+``--params-json`` are in that basis and are rotated with the templates,
+``a_rot = R a``, so the full correction is the same in both bases.
+
 The quantity reported is
 
     | (w_obs - w_full) - (w_obs - w_auto) | / | w_obs - w_full |
@@ -57,6 +63,9 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--template-dir", required=True,
                     help="Directory of template FITS for one NSIDE.")
+    ap.add_argument("--rand-file", type=Path, default=None,
+                    help="The sample's *_RAND.fits; its footprint is where the templates "
+                         "are standardised.  Without it, the templates' common valid region.")
     ap.add_argument("--nside", type=int, required=True)
     ap.add_argument("--params-json", type=Path, default=None,
                     help="A *_params.json from run_ls10_analysis.py; the fitted "
@@ -85,15 +94,21 @@ def main() -> int:
     spec.loader.exec_module(mod)
 
     T = np.atleast_2d(np.asarray(mod.load_templates_from_dir(a.template_dir, a.nside)[0]))
-    good = np.all(np.isfinite(T), axis=0) & np.all(T != 0, axis=0)
-    Tv = T[:, good]
-    Tv = (Tv - Tv.mean(1, keepdims=True)) / Tv.std(1, keepdims=True)
+    if a.rand_file is not None:
+        from astropy.io import fits
+        with fits.open(a.rand_file, memmap=True) as h:
+            r = h[1].data
+            rc = sm.pixelize_catalog(np.asarray(r["RA"], float), np.asarray(r["DEC"], float),
+                                     a.nside)
+        good = rc >= 0.1 * rc.max()
+    else:
+        good = np.all(np.isfinite(T), axis=0) & np.all(T != 0, axis=0)
+    Tv = sm.standardise_on_footprint(sm.assign_template_values(T, good))
     n_sys = Tv.shape[0]
 
-    basis = Tv
+    basis, R = Tv, np.eye(n_sys)
     if a.rotate:
-        rot = rotate_templates(Tv)
-        basis = rot[0] if isinstance(rot, tuple) else rot
+        basis, R, _ = rotate_templates(Tv)
 
     if a.params_json is not None:
         d = json.loads(Path(a.params_json).read_text())
@@ -113,6 +128,8 @@ def main() -> int:
         amps = np.random.default_rng(a.seed).normal(0, 0.03, n_sys)
         source = "random (indicative only)"
 
+    # The amplitudes are fitted in the footprint-standardised basis; rotate them with it.
+    amps = R @ amps
     theta = np.radians(np.linspace(a.theta_min, a.theta_max, a.n_theta))
     xi = template_xi_matrix(basis, good, a.nside, theta)
     autos = np.array([xi[i, i] for i in range(n_sys)])
@@ -133,6 +150,7 @@ def main() -> int:
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(json.dumps({
             "nside": a.nside, "n_sys": n_sys, "rotated": bool(a.rotate),
+            "footprint": str(a.rand_file) if a.rand_file else "template valid region",
             "amplitude_source": source, "theta_deg": np.degrees(theta).tolist(),
             "frac_cross": frac.tolist(), "median_frac_cross": float(np.median(frac)),
         }, indent=1))

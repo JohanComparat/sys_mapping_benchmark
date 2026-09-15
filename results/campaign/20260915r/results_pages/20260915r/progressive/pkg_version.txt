@@ -1,0 +1,25 @@
+source:   /home/comparaj/software/sys_mapping
+snapshot: 2026-09-15T15:12:34+02:00
+          head:     6f43dcc65e2f1b806574f863fdd90bcffab2b844 (1.4.0, 6f43dcc)
+          dirty:    yes (working tree pushed 2026-09-15T15:06:14+02:00)
+                     M pyproject.toml
+                     M scripts/_post_mock100.sh
+                     M scripts/analyze_detectability_law.py
+                     M scripts/compute_sys_weights.py
+                     M scripts/make_survey_design_synthesis.py
+                     M scripts/plot_simulation_tests.py
+                     M scripts/run_all_methods_sequential.sh
+                     M scripts/run_ls10_analysis.py
+                     M scripts/run_mock_analysis.py
+                     M scripts/run_mock_analysis_progressive.py
+                     M scripts/run_mock_analysis_real_templates.py
+                     M scripts/run_simulation_tests.py
+                     M scripts/run_snr_preselection_demo.py
+                     M scripts/run_systematic_tests.py
+                     M scripts/run_validation.py
+                     M sys_mapping/__init__.py
+                     M sys_mapping/contamination.py
+                     M sys_mapping/diagnostics.py
+                     M sys_mapping/glass_mocks.py
+                     M sys_mapping/model_selection.py
+                     M sys_mapping/regression.py

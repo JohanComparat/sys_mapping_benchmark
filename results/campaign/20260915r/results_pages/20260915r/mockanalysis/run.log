@@ -1,0 +1,118 @@
+Templates: 3 (['synth_0', 'synth_1', 'synth_2'])
+Calibrating the ISD stopping rule on 50 uncontaminated mocks ...
+  ISD-1 chi2_68 = [  2.12   1.17 230.43]
+  ISD-3 chi2_68 = [  5.03   3.51 270.78]
+Mock 1/100: 988,804 galaxies, 7,802,880 randoms
+Mock 2/100: 964,744 galaxies, 7,802,880 randoms
+Mock 3/100: 940,010 galaxies, 7,802,880 randoms
+Mock 4/100: 960,509 galaxies, 7,802,880 randoms
+Mock 5/100: 949,555 galaxies, 7,802,880 randoms
+Mock 6/100: 1,037,379 galaxies, 7,802,880 randoms
+Mock 7/100: 1,007,142 galaxies, 7,802,880 randoms
+Mock 8/100: 994,251 galaxies, 7,802,880 randoms
+Mock 9/100: 995,582 galaxies, 7,802,880 randoms
+Mock 10/100: 946,684 galaxies, 7,802,880 randoms
+Mock 11/100: 923,845 galaxies, 7,802,880 randoms
+Mock 12/100: 967,731 galaxies, 7,802,880 randoms
+Mock 13/100: 962,625 galaxies, 7,802,880 randoms
+Mock 14/100: 952,933 galaxies, 7,802,880 randoms
+Mock 15/100: 993,690 galaxies, 7,802,880 randoms
+Mock 16/100: 956,135 galaxies, 7,802,880 randoms
+Mock 17/100: 972,502 galaxies, 7,802,880 randoms
+Mock 18/100: 977,946 galaxies, 7,802,880 randoms
+Mock 19/100: 967,631 galaxies, 7,802,880 randoms
+Mock 20/100: 959,842 galaxies, 7,802,880 randoms
+Mock 21/100: 993,471 galaxies, 7,802,880 randoms
+Mock 22/100: 977,486 galaxies, 7,802,880 randoms
+Mock 23/100: 1,020,964 galaxies, 7,802,880 randoms
+Mock 24/100: 939,007 galaxies, 7,802,880 randoms
+Mock 25/100: 979,887 galaxies, 7,802,880 randoms
+Mock 26/100: 962,817 galaxies, 7,802,880 randoms
+Mock 27/100: 1,004,082 galaxies, 7,802,880 randoms
+Mock 28/100: 971,621 galaxies, 7,802,880 randoms
+Mock 29/100: 964,867 galaxies, 7,802,880 randoms
+Mock 30/100: 1,021,081 galaxies, 7,802,880 randoms
+Mock 31/100: 939,548 galaxies, 7,802,880 randoms
+Mock 32/100: 959,203 galaxies, 7,802,880 randoms
+Mock 33/100: 980,593 galaxies, 7,802,880 randoms
+Mock 34/100: 954,151 galaxies, 7,802,880 randoms
+Mock 35/100: 925,080 galaxies, 7,802,880 randoms
+Mock 36/100: 979,563 galaxies, 7,802,880 randoms
+Mock 37/100: 970,758 galaxies, 7,802,880 randoms
+Mock 38/100: 957,582 galaxies, 7,802,880 randoms
+Mock 39/100: 947,357 galaxies, 7,802,880 randoms
+Mock 40/100: 944,164 galaxies, 7,802,880 randoms
+Mock 41/100: 994,190 galaxies, 7,802,880 randoms
+Mock 42/100: 973,414 galaxies, 7,802,880 randoms
+Mock 43/100: 1,005,085 galaxies, 7,802,880 randoms
+Mock 44/100: 962,970 galaxies, 7,802,880 randoms
+Mock 45/100: 1,069,480 galaxies, 7,802,880 randoms
+Mock 46/100: 976,758 galaxies, 7,802,880 randoms
+Mock 47/100: 993,035 galaxies, 7,802,880 randoms
+Mock 48/100: 1,010,947 galaxies, 7,802,880 randoms
+Mock 49/100: 954,007 galaxies, 7,802,880 randoms
+Mock 50/100: 1,011,519 galaxies, 7,802,880 randoms
+Mock 51/100: 933,584 galaxies, 7,802,880 randoms
+Mock 52/100: 999,127 galaxies, 7,802,880 randoms
+Mock 53/100: 1,008,599 galaxies, 7,802,880 randoms
+Mock 54/100: 910,053 galaxies, 7,802,880 randoms
+Mock 55/100: 973,903 galaxies, 7,802,880 randoms
+Mock 56/100: 922,582 galaxies, 7,802,880 randoms
+Mock 57/100: 998,846 galaxies, 7,802,880 randoms
+Mock 58/100: 895,618 galaxies, 7,802,880 randoms
+Mock 59/100: 979,606 galaxies, 7,802,880 randoms
+Mock 60/100: 971,052 galaxies, 7,802,880 randoms
+Mock 61/100: 1,019,676 galaxies, 7,802,880 randoms
+Mock 62/100: 948,445 galaxies, 7,802,880 randoms
+Mock 63/100: 996,661 galaxies, 7,802,880 randoms
+Mock 64/100: 983,187 galaxies, 7,802,880 randoms
+Mock 65/100: 975,031 galaxies, 7,802,880 randoms
+Mock 66/100: 930,023 galaxies, 7,802,880 randoms
+Mock 67/100: 935,811 galaxies, 7,802,880 randoms
+Mock 68/100: 952,516 galaxies, 7,802,880 randoms
+Mock 69/100: 936,955 galaxies, 7,802,880 randoms
+Mock 70/100: 1,015,169 galaxies, 7,802,880 randoms
+Mock 71/100: 932,659 galaxies, 7,802,880 randoms
+Mock 72/100: 974,146 galaxies, 7,802,880 randoms
+Mock 73/100: 886,194 galaxies, 7,802,880 randoms
+Mock 74/100: 1,074,394 galaxies, 7,802,880 randoms
+Mock 75/100: 947,010 galaxies, 7,802,880 randoms
+Mock 76/100: 969,435 galaxies, 7,802,880 randoms
+Mock 77/100: 949,901 galaxies, 7,802,880 randoms
+Mock 78/100: 950,030 galaxies, 7,802,880 randoms
+Mock 79/100: 973,990 galaxies, 7,802,880 randoms
+Mock 80/100: 931,075 galaxies, 7,802,880 randoms
+Mock 81/100: 993,151 galaxies, 7,802,880 randoms
+Mock 82/100: 958,596 galaxies, 7,802,880 randoms
+Mock 83/100: 1,007,003 galaxies, 7,802,880 randoms
+Mock 84/100: 1,021,944 galaxies, 7,802,880 randoms
+Mock 85/100: 987,934 galaxies, 7,802,880 randoms
+Mock 86/100: 1,030,802 galaxies, 7,802,880 randoms
+Mock 87/100: 976,113 galaxies, 7,802,880 randoms
+Mock 88/100: 969,919 galaxies, 7,802,880 randoms
+Mock 89/100: 992,412 galaxies, 7,802,880 randoms
+Mock 90/100: 942,983 galaxies, 7,802,880 randoms
+Mock 91/100: 937,605 galaxies, 7,802,880 randoms
+Mock 92/100: 953,895 galaxies, 7,802,880 randoms
+Mock 93/100: 949,267 galaxies, 7,802,880 randoms
+Mock 94/100: 1,024,979 galaxies, 7,802,880 randoms
+Mock 95/100: 986,489 galaxies, 7,802,880 randoms
+Mock 96/100: 944,733 galaxies, 7,802,880 randoms
+Mock 97/100: 942,750 galaxies, 7,802,880 randoms
+Mock 98/100: 946,582 galaxies, 7,802,880 randoms
+Mock 99/100: 1,021,957 galaxies, 7,802,880 randoms
+Mock 100/100: 1,003,146 galaxies, 7,802,880 randoms
+  Saved mock_parameter_recovery_all_methods.png
+  Saved mock_sigma_recovery.png
+  Saved mock_lrt_statistics.png
+  Saved mock_b_parameter_recovery.png
+
+=== Mock analysis summary ===
+  N mocks:        100
+  Mean N_gal:     972318
+  Mean N_pix:     32512
+  LRT reject fraction (add vs comb): 99%
+  Mean |a_bias| (MCMC-comb): 0.0115
+  Mean |b_bias| (MCMC-comb): 0.0206
+
+All outputs written to /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/mockanalysis

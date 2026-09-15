@@ -1,0 +1,25 @@
+{
+  "template_names": [
+    "LS10_EBV",
+    "LS10_GALDEPTH_Z",
+    "LS10_PSFSIZE_R",
+    "LS10_NOBS_R",
+    "GAIA_nstar_faint"
+  ],
+  "n_mocks": 30,
+  "null_spectrum": "/bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/campaigns/20260915r/matched_spectra/LS10_VLIM_ANY_10.5_Mstar_12.0_0.05_z_0.26_N_3263228_NSIDE0064_match.json",
+  "ISD-1": [
+    6.938254906619346,
+    3.4842508606466307,
+    7.639469758459291,
+    4.1890259035787745,
+    6.811524958896079
+  ],
+  "ISD-3": [
+    16.984488917476913,
+    8.585846947131785,
+    12.698387183761248,
+    13.150646457330536,
+    42.28127105903268
+  ]
+}

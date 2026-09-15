@@ -1,0 +1,68 @@
+NSIDE=32, methods=['OLS', 'ElasticNet', 'ISD-1', 'ISD-3', 'MCMC-add', 'MCMC-comb']
+Output: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/systests
+Footprint: 8,064 pixels (65.6% of sky)
+Calibrating the ISD stopping rule on 50 uncontaminated mocks ...
+  ISD-1 chi2_68 = [ 1.53  1.53 56.83  9.5   1.38  2.15 59.28]
+  ISD-3 chi2_68 = [ 4.42  4.4  65.34 11.79  4.27  5.03 78.16]
+
+=== Tier 1 — additive ===
+  T1_add_s0 ... std: {'OLS': '0.156', 'ElasticNet': '0.156', 'ISD-1': '0.157', 'ISD-3': '0.157', 'MCMC-add': '0.145', 'MCMC-comb': '0.145'}
+  T1_add_s1 ... std: {'OLS': '0.158', 'ElasticNet': '0.158', 'ISD-1': '0.158', 'ISD-3': '0.158', 'MCMC-add': '0.144', 'MCMC-comb': '0.144'}
+  T1_add_s2 ... std: {'OLS': '0.155', 'ElasticNet': '0.155', 'ISD-1': '0.156', 'ISD-3': '0.158', 'MCMC-add': '0.144', 'MCMC-comb': '0.144'}
+  T1_add_s3 ... std: {'OLS': '0.156', 'ElasticNet': '0.156', 'ISD-1': '0.156', 'ISD-3': '0.156', 'MCMC-add': '0.145', 'MCMC-comb': '0.144'}
+  T1_add_s4 ... std: {'OLS': '0.157', 'ElasticNet': '0.157', 'ISD-1': '0.158', 'ISD-3': '0.158', 'MCMC-add': '0.145', 'MCMC-comb': '0.145'}
+  T1_add_s5 ... std: {'OLS': '0.155', 'ElasticNet': '0.155', 'ISD-1': '0.157', 'ISD-3': '0.156', 'MCMC-add': '0.145', 'MCMC-comb': '0.145'}
+  T1_add_s6 ... std: {'OLS': '0.160', 'ElasticNet': '0.161', 'ISD-1': '0.189', 'ISD-3': '0.189', 'MCMC-add': '0.151', 'MCMC-comb': '0.151'}
+  T1_add_m2 ... std: {'OLS': '0.189', 'ElasticNet': '0.189', 'ISD-1': '0.189', 'ISD-3': '0.190', 'MCMC-add': '0.146', 'MCMC-comb': '0.144'}
+  T1_add_m3 ... std: {'OLS': '0.244', 'ElasticNet': '0.244', 'ISD-1': '0.259', 'ISD-3': '0.249', 'MCMC-add': '0.187', 'MCMC-comb': '0.147'}
+  T1_add_m4 ... std: {'OLS': '0.306', 'ElasticNet': '0.304', 'ISD-1': '0.315', 'ISD-3': '0.310', 'MCMC-add': '0.229', 'MCMC-comb': '0.157'}
+  T1_add_m5 ... std: {'OLS': '0.371', 'ElasticNet': '0.368', 'ISD-1': '0.373', 'ISD-3': '0.371', 'MCMC-add': '0.273', 'MCMC-comb': '0.176'}
+  T1_add_m6 ... std: {'OLS': '0.378', 'ElasticNet': '0.373', 'ISD-1': '0.380', 'ISD-3': '0.377', 'MCMC-add': '0.279', 'MCMC-comb': '0.180'}
+  T1_add_m7 ... std: {'OLS': '0.386', 'ElasticNet': '0.382', 'ISD-1': '0.394', 'ISD-3': '0.391', 'MCMC-add': '0.288', 'MCMC-comb': '0.191'}
+
+=== Tier 1 — multiplicative ===
+  T1_mul_s0 ... std: {'OLS': '0.153', 'ElasticNet': '0.153', 'ISD-1': '0.153', 'ISD-3': '0.153', 'MCMC-add': '0.154', 'MCMC-comb': '0.145'}
+  T1_mul_s1 ... std: {'OLS': '0.154', 'ElasticNet': '0.154', 'ISD-1': '0.154', 'ISD-3': '0.154', 'MCMC-add': '0.155', 'MCMC-comb': '0.146'}
+  T1_mul_s2 ... std: {'OLS': '0.157', 'ElasticNet': '0.156', 'ISD-1': '0.156', 'ISD-3': '0.156', 'MCMC-add': '0.158', 'MCMC-comb': '0.147'}
+  T1_mul_s3 ... std: {'OLS': '0.155', 'ElasticNet': '0.154', 'ISD-1': '0.154', 'ISD-3': '0.154', 'MCMC-add': '0.156', 'MCMC-comb': '0.146'}
+  T1_mul_s4 ... std: {'OLS': '0.154', 'ElasticNet': '0.154', 'ISD-1': '0.154', 'ISD-3': '0.154', 'MCMC-add': '0.154', 'MCMC-comb': '0.146'}
+  T1_mul_s5 ... std: {'OLS': '0.152', 'ElasticNet': '0.152', 'ISD-1': '0.153', 'ISD-3': '0.153', 'MCMC-add': '0.150', 'MCMC-comb': '0.145'}
+  T1_mul_s6 ... std: {'OLS': '0.157', 'ElasticNet': '0.157', 'ISD-1': '0.155', 'ISD-3': '0.155', 'MCMC-add': '0.150', 'MCMC-comb': '0.148'}
+  T1_mul_m2 ... std: {'OLS': '0.181', 'ElasticNet': '0.180', 'ISD-1': '0.180', 'ISD-3': '0.180', 'MCMC-add': '0.182', 'MCMC-comb': '0.154'}
+  T1_mul_m3 ... std: {'OLS': '0.209', 'ElasticNet': '0.208', 'ISD-1': '0.208', 'ISD-3': '0.208', 'MCMC-add': '0.212', 'MCMC-comb': '0.164'}
+  T1_mul_m4 ... std: {'OLS': '0.258', 'ElasticNet': '0.256', 'ISD-1': '0.258', 'ISD-3': '0.256', 'MCMC-add': '0.261', 'MCMC-comb': '0.188'}
+  T1_mul_m5 ... std: {'OLS': '0.298', 'ElasticNet': '0.291', 'ISD-1': '0.294', 'ISD-3': '0.295', 'MCMC-add': '0.302', 'MCMC-comb': '0.227'}
+  T1_mul_m6 ... std: {'OLS': '0.299', 'ElasticNet': '0.293', 'ISD-1': '0.296', 'ISD-3': '0.297', 'MCMC-add': '0.302', 'MCMC-comb': '0.229'}
+  T1_mul_m7 ... std: {'OLS': '0.319', 'ElasticNet': '0.308', 'ISD-1': '0.310', 'ISD-3': '0.311', 'MCMC-add': '0.317', 'MCMC-comb': '0.244'}
+
+=== Tier 2 — combined (additive + multiplicative) ===
+  T2_comb_1m (1 mult + 6 add) ... std: {'OLS': '0.358', 'ElasticNet': '0.354', 'ISD-1': '0.363', 'ISD-3': '0.374', 'MCMC-add': '0.281', 'MCMC-comb': '0.187'}
+  T2_comb_2m (2 mult + 5 add) ... std: {'OLS': '0.326', 'ElasticNet': '0.323', 'ISD-1': '0.346', 'ISD-3': '0.354', 'MCMC-add': '0.283', 'MCMC-comb': '0.181'}
+  T2_comb_3m (3 mult + 4 add) ... std: {'OLS': '0.308', 'ElasticNet': '0.304', 'ISD-1': '0.331', 'ISD-3': '0.340', 'MCMC-add': '0.289', 'MCMC-comb': '0.178'}
+  T2_comb_4m (4 mult + 3 add) ... std: {'OLS': '0.289', 'ElasticNet': '0.285', 'ISD-1': '0.321', 'ISD-3': '0.332', 'MCMC-add': '0.301', 'MCMC-comb': '0.185'}
+  T2_comb_5m (5 mult + 2 add) ... std: {'OLS': '0.282', 'ElasticNet': '0.278', 'ISD-1': '0.324', 'ISD-3': '0.341', 'MCMC-add': '0.323', 'MCMC-comb': '0.202'}
+  T2_comb_6m (6 mult + 1 add) ... std: {'OLS': '0.262', 'ElasticNet': '0.258', 'ISD-1': '0.306', 'ISD-3': '0.327', 'MCMC-add': '0.322', 'MCMC-comb': '0.200'}
+
+CSV written to /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/systests/systematic_test_summary.csv
+
+=== Mean std_ratio per method (lower = better) ===
+              mean     min     max
+method                            
+ElasticNet  0.2304  0.1519  0.3817
+ISD-1       0.2393  0.1525  0.3936
+ISD-3       0.2411  0.1525  0.3909
+MCMC-add    0.2148  0.1439  0.3235
+MCMC-comb   0.1679  0.1437  0.2440
+OLS         0.2324  0.1519  0.3859
+
+=== Mean compute time per method (seconds) ===
+              mean    min      max
+method                            
+OLS          0.002  0.000    0.022
+ElasticNet   0.162  0.073    1.409
+ISD-1        0.200  0.004    0.744
+ISD-3        0.202  0.004    0.714
+MCMC-add     0.491  0.092    2.438
+MCMC-comb   57.881  5.541  134.005
+
+Done.

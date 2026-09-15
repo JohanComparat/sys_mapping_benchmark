@@ -1,0 +1,274 @@
+Output directory: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032
+
+============================================================
+  Step 1: Loading Uchuu mock catalog
+============================================================
+  Loaded 923,373 galaxies in 4.7s
+
+============================================================
+  Step 2: Generating GLASS full-sky mock (n=500,000, nside=32)
+============================================================
+  Generated 500,094 galaxies in 0.5s
+
+============================================================
+  Step 3: Loading LSDR10 systematic maps (NSIDE=32)
+============================================================
+  Loaded 5 maps: ['LS10_EBV', 'LS10_GALDEPTH_Z', 'LS10_PSFSIZE_R', 'LS10_NOBS_R', 'GAIA_nstar_faint']  (0.0s)
+  Footprint: 5,954 / 12,288 pixels  (48.5% of sky)
+  GLASS after footprint cut: 242,124 galaxies  (500,094 → 242,124), 2,422,610 randoms
+  UCHUU after footprint cut: 358,597 galaxies  (923,373 → 358,597), 2,450,717 randoms
+
+============================================================
+  Step 4: Running 9 contamination configs on uchuu
+============================================================
+    Calibrating ISD threshold on 30 systematic-free GLASS mocks...
+    ISD null: matched spectrum from /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/campaigns/20260915r/matched_spectra/LS10_VLIM_ANY_10.5_Mstar_12.0_0.05_z_0.26_N_3263228_NSIDE0032_match.json
+    ISD-1 chi2_68 = [4.6 1.7 4.8 2.7 8. ] (2.7s)
+    ISD-3 chi2_68 = [10.3  7.3  9.2  9.  20.7] (5.4s)
+
+  [01/9] uchuu | low_additive
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/low_additive_seed0.fits
+    Recovery complete in 81.2s
+    Mean |w_cont - w_true|/max|w_true| = 0.005
+    OLS         : residual = 0.011
+    ISD-1       : residual = 0.010
+    ISD-3       : residual = 0.010
+    ElasticNet  : residual = 0.009
+    MCMC-add    : residual = 0.011
+    MCMC-comb   : residual = 0.052
+
+  [02/9] uchuu | low_multiplicative
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/low_multiplicative_seed0.fits
+    Recovery complete in 64.4s
+    Mean |w_cont - w_true|/max|w_true| = 0.006
+    OLS         : residual = 0.008
+    ISD-1       : residual = 0.006
+    ISD-3       : residual = 0.006
+    ElasticNet  : residual = 0.006
+    MCMC-add    : residual = 0.009
+    MCMC-comb   : residual = 0.038
+
+  [03/9] uchuu | low_combined
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/low_combined_seed0.fits
+    Recovery complete in 65.8s
+    Mean |w_cont - w_true|/max|w_true| = 0.010
+    OLS         : residual = 0.016
+    ISD-1       : residual = 0.014
+    ISD-3       : residual = 0.016
+    ElasticNet  : residual = 0.015
+    MCMC-add    : residual = 0.017
+    MCMC-comb   : residual = 0.049
+
+  [04/9] uchuu | medium_additive
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/medium_additive_seed0.fits
+    Recovery complete in 64.9s
+    Mean |w_cont - w_true|/max|w_true| = 0.008
+    OLS         : residual = 0.019
+    ISD-1       : residual = 0.015
+    ISD-3       : residual = 0.021
+    ElasticNet  : residual = 0.019
+    MCMC-add    : residual = 0.022
+    MCMC-comb   : residual = 0.063
+
+  [05/9] uchuu | medium_multiplicative
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/medium_multiplicative_seed0.fits
+    Recovery complete in 70.3s
+    Mean |w_cont - w_true|/max|w_true| = 0.014
+    OLS         : residual = 0.016
+    ISD-1       : residual = 0.014
+    ISD-3       : residual = 0.014
+    ElasticNet  : residual = 0.014
+    MCMC-add    : residual = 0.016
+    MCMC-comb   : residual = 0.033
+
+  [06/9] uchuu | medium_combined
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/medium_combined_seed0.fits
+    Recovery complete in 81.6s
+    Mean |w_cont - w_true|/max|w_true| = 0.007
+    OLS         : residual = 0.030
+    ISD-1       : residual = 0.027
+    ISD-3       : residual = 0.031
+    ElasticNet  : residual = 0.030
+    MCMC-add    : residual = 0.034
+    MCMC-comb   : residual = 0.053
+
+  [07/9] uchuu | high_additive
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/high_additive_seed0.fits
+    Recovery complete in 70.9s
+    Mean |w_cont - w_true|/max|w_true| = 0.061
+    OLS         : residual = 0.025
+    ISD-1       : residual = 0.016
+    ISD-3       : residual = 0.011
+    ElasticNet  : residual = 0.022
+    MCMC-add    : residual = 0.034
+    MCMC-comb   : residual = 0.069
+
+  [08/9] uchuu | high_multiplicative
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/high_multiplicative_seed0.fits
+    Recovery complete in 190.2s
+    Mean |w_cont - w_true|/max|w_true| = 0.024
+    OLS         : residual = 0.026
+    ISD-1       : residual = 0.024
+    ISD-3       : residual = 0.024
+    ElasticNet  : residual = 0.024
+    MCMC-add    : residual = 0.026
+    MCMC-comb   : residual = 0.041
+
+  [09/9] uchuu | high_combined
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/uchuu/high_combined_seed0.fits
+    Recovery complete in 89.1s
+    Mean |w_cont - w_true|/max|w_true| = 0.043
+    OLS         : residual = 0.038
+    ISD-1       : residual = 0.028
+    ISD-3       : residual = 0.029
+    ElasticNet  : residual = 0.038
+    MCMC-add    : residual = 0.052
+    MCMC-comb   : residual = 0.038
+
+============================================================
+  Step 4: Running 9 contamination configs on glass
+============================================================
+    Calibrating ISD threshold on 30 systematic-free GLASS mocks...
+    ISD null: parametric spectrum, cl_amplitude=0.0005
+    ISD-1 chi2_68 = [1.6 3.5 1.5 2.6 1.6] (4.5s)
+    ISD-3 chi2_68 = [5.6 6.4 5.7 7.4 5.3] (7.8s)
+
+  [01/9] glass | low_additive
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/low_additive_seed0.fits
+    Recovery complete in 120.3s
+    Mean |w_cont - w_true|/max|w_true| = 0.144
+    OLS         : residual = 0.044
+    ISD-1       : residual = 0.052
+    ISD-3       : residual = 0.034
+    ElasticNet  : residual = 0.047
+    MCMC-add    : residual = 0.036
+    MCMC-comb   : residual = 0.249
+
+  [02/9] glass | low_multiplicative
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/low_multiplicative_seed0.fits
+    Recovery complete in 584.1s
+    Mean |w_cont - w_true|/max|w_true| = 0.036
+    OLS         : residual = 0.047
+    ISD-1       : residual = 0.036
+    ISD-3       : residual = 0.036
+    ElasticNet  : residual = 0.036
+    MCMC-add    : residual = 0.032
+    MCMC-comb   : residual = 0.237
+
+  [03/9] glass | low_combined
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/low_combined_seed0.fits
+    Recovery complete in 464.7s
+    Mean |w_cont - w_true|/max|w_true| = 0.111
+    OLS         : residual = 0.052
+    ISD-1       : residual = 0.041
+    ISD-3       : residual = 0.048
+    ElasticNet  : residual = 0.057
+    MCMC-add    : residual = 0.056
+    MCMC-comb   : residual = 0.222
+
+  [04/9] glass | medium_additive
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/medium_additive_seed0.fits
+    Recovery complete in 80.6s
+    Mean |w_cont - w_true|/max|w_true| = 0.916
+    OLS         : residual = 0.041
+    ISD-1       : residual = 0.080
+    ISD-3       : residual = 0.035
+    ElasticNet  : residual = 0.035
+    MCMC-add    : residual = 0.064
+    MCMC-comb   : residual = 0.219
+
+  [05/9] glass | medium_multiplicative
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/medium_multiplicative_seed0.fits
+    Recovery complete in 272.2s
+    Mean |w_cont - w_true|/max|w_true| = 0.056
+    OLS         : residual = 0.056
+    ISD-1       : residual = 0.056
+    ISD-3       : residual = 0.056
+    ElasticNet  : residual = 0.056
+    MCMC-add    : residual = 0.046
+    MCMC-comb   : residual = 0.207
+
+  [06/9] glass | medium_combined
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/medium_combined_seed0.fits
+    Recovery complete in 254.2s
+    Mean |w_cont - w_true|/max|w_true| = 0.879
+    OLS         : residual = 0.068
+    ISD-1       : residual = 0.071
+    ISD-3       : residual = 0.044
+    ElasticNet  : residual = 0.068
+    MCMC-add    : residual = 0.116
+    MCMC-comb   : residual = 0.162
+
+  [07/9] glass | high_additive
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/high_additive_seed0.fits
+    Recovery complete in 114.7s
+    Mean |w_cont - w_true|/max|w_true| = 3.633
+    OLS         : residual = 0.089
+    ISD-1       : residual = 0.451
+    ISD-3       : residual = 0.341
+    ElasticNet  : residual = 0.085
+    MCMC-add    : residual = 0.102
+    MCMC-comb   : residual = 0.258
+
+  [08/9] glass | high_multiplicative
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/high_multiplicative_seed0.fits
+    Recovery complete in 242.5s
+    Mean |w_cont - w_true|/max|w_true| = 0.066
+    OLS         : residual = 0.071
+    ISD-1       : residual = 0.066
+    ISD-3       : residual = 0.066
+    ElasticNet  : residual = 0.066
+    MCMC-add    : residual = 0.067
+    MCMC-comb   : residual = 0.076
+
+  [09/9] glass | high_combined
+    Saved contaminated catalog → /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/glass/high_combined_seed0.fits
+    Recovery complete in 388.8s
+    Mean |w_cont - w_true|/max|w_true| = 3.604
+    OLS         : residual = 0.081
+    ISD-1       : residual = 0.462
+    ISD-3       : residual = 0.358
+    ElasticNet  : residual = 0.076
+    MCMC-add    : residual = 0.160
+    MCMC-comb   : residual = 0.154
+
+============================================================
+  Step 5: Saving results summary
+============================================================
+  Saved results to /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/results_summary.json
+
+============================================================
+  Step 6: Generating w(θ) recovery plots
+============================================================
+  Plots saved to /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/plots/
+
+All done.
+Loaded 18 result entries from /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/nside0032/results_summary.json
+
+[1/6] n(z) comparison
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/nz_comparison.png
+
+[2/6] Skipping template overview (--no-templates)
+
+[3/6] w(θ) recovery grids (['glass', 'uchuu'])
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/wtheta_recovery_grid_glass.png
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/wtheta_recovery_grid_uchuu.png
+
+[4/6] GLASS vs Uchuu comparison (medium-combined)
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/wtheta_recovery_by_source.png
+
+[5/6] Recovery bias heatmap
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/recovery_bias_heatmap.png
+
+[6/8] Contamination amplitude scan
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/contamination_amplitude_scan.png
+
+[7/8] Parameter recovery scatter (aᵢ and bᵢ)
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/parameter_recovery_a.png
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/parameter_recovery_b.png
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/parameter_recovery_ab.png
+
+[8/8] Summary CSV table
+  Saved /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/summary_table.csv
+
+All outputs written to /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/results_pages/20260915r/simtests32/figures/

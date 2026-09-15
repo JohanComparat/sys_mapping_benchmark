@@ -1,0 +1,10 @@
+k,mode,n_mocks,TP rate,FP rate,LRT correct,median lambda_LR
+1,additive,5,1.00,0.20,0.20,27.8
+1,multiplicative,5,1.00,0.33,1.00,30.9
+1,combined,5,1.00,0.53,1.00,40.6
+2,additive,5,1.00,0.80,0.00,35.8
+2,multiplicative,5,0.90,0.60,1.00,540.7
+2,combined,5,1.00,0.90,1.00,523.1
+3,additive,5,1.00,0.40,0.20,57.7
+3,multiplicative,5,0.87,0.20,1.00,986.9
+3,combined,5,1.00,0.40,1.00,729.2

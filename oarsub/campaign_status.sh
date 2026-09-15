@@ -87,6 +87,14 @@ H) echo "== H  ISD capability tests  (expect 50 seeds at NSIDE ${SMB_H_NSIDE:-32
      fi
    done ;;
 
+R) echo "== R  results-page runs  (expect 5 cells)"
+   R="${SMB_RESULTS}/results_pages/${TAG}"
+   for c in progressive systests mockanalysis simtests64 simtests32; do
+     report "${c}" "${R}/${c}/DONE"
+   done
+   if [ -d "${R}/mockanalysis" ]; then
+     echo "   mockanalysis: $(ls "${R}/mockanalysis" | grep -c '^mock_.*_results.json$') of 100 mocks fitted"
+   fi ;;
 F) echo "== F  simulation tests  (expect 50 seeds x 3 NSIDE)"
    R="${SMB_RESULTS}/simulations/${TAG}"
    for k in $(seq 0 49); do for n in 32 64 128; do
