@@ -120,16 +120,21 @@ while [ $# -gt 0 ]; do
            sub "./oarsub/run_glassmatch.sh ${TAG} 25 5"
        fi ;;
     E) # The null is each sample's matched spectrum, carried in the snapshot.
+       # SMB_E_NMOCK sets the number of realisations: the p-value floor is 1/(N+1),
+       # so a p quoted near the floor needs a few hundred.  The batched maxima of
+       # lrt_from_maxima make that affordable.
+       E_NMOCK="${SMB_E_NMOCK:-50}"
        # An optional comma-separated cell list re-runs a subset.
        ECELLS=""
        if [[ "${1:-}" =~ ^[0-9]+(,[0-9]+)*$ ]]; then ECELLS="$1"; shift; fi
        if [ -n "${ECELLS}" ]; then
            N_E=$(awk -F, '{print NF}' <<< "${ECELLS}")
-           echo "== E  mock-calibrated LRT, cells ${ECELLS} only (${N_E} of 18, core=8, 48 h)"
-           sub "./oarsub/run_lrt.sh ${TAG} 50 ${ECELLS}" --array "${N_E}"
+           echo "== E  mock-calibrated LRT, cells ${ECELLS} only (${N_E} of 18, core=8, 48 h)," \
+                "${E_NMOCK} realisations"
+           sub "./oarsub/run_lrt.sh ${TAG} ${E_NMOCK} ${ECELLS}" --array "${N_E}"
        else
-           echo "== E  mock-calibrated LRT (array 18, core=8, 48 h)"
-           sub "./oarsub/run_lrt.sh ${TAG} 50"
+           echo "== E  mock-calibrated LRT (array 18, core=8, 48 h), ${E_NMOCK} realisations"
+           sub "./oarsub/run_lrt.sh ${TAG} ${E_NMOCK}"
        fi ;;
     F) # 75 elements rarely fit beside B and C, so F is submitted in chunks with
        # an explicit offset.  Re-run `submit_campaign.sh <tag> F` as the queue
