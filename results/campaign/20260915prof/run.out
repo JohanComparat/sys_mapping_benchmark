@@ -1,0 +1,42 @@
+Loaded 11 external templates: ['GAIA_nstar_faint_NSIDE_00032', 'GAIA_nstar_medium_NSIDE_00032', 'GAIA_phot_bp_mean_flux_NSIDE_00032', 'GAIA_phot_g_mean_flux_NSIDE_00032', 'GAIA_phot_rp_mean_flux_NSIDE_00032', 'LS10_EBV_NSIDE_0032', 'LS10_GALDEPTH_G_NSIDE_0032', 'LS10_GALDEPTH_R_NSIDE_0032', 'LS10_GALDEPTH_Z_NSIDE_0032', 'LS10_NOBS_R_NSIDE_0032', 'LS10_PSFSIZE_R_NSIDE_0032']
+Only-methods   : all
+  null spectrum: matched, 97 multipoles (LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238 NSIDE0032)
+
+============================================================
+Sample: LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238
+============================================================
+Galaxies: 2,759,238  Randoms: 13,795,884
+Unmasked pixels: 5,616 / 12,288  (45.7%)
+δ_g  mean=0.0097  std=0.3819
+Footprint-standardised 11 templates: rms was 0.112-1.018, |mean| up to 0.499
+  Calibrating ISD threshold on 10 systematic-free GLASS mocks ...
+  ISD chi2_68 = [50.4 31.8 19.7 20.3 15.6 13.4 33.4 34.2 28.4 30.7 22.2]
+  Running OLS ...
+    OLS: 0.0s
+  Running ElasticNet ...
+    ElasticNet: 2.6s
+  Running ISD-1 ...
+    ISD-1: 0.5s
+  Running ISD-3 ...
+    ISD-3: 0.1s
+  Running MCMC-add ...
+    MCMC-add: 3.7s
+  Running MCMC-comb ...
+    MCMC-comb: 199.5s
+Acceptance fraction — add: 1.000  comb: 0.870
+
+Calibrating detection significance on 40 uncontaminated realisations ...
+  most significant: LS10_GALDEPTH_R_NSIDE_0032 at 1.65 calibrated; family-wise p = 0.6341 (floor 0.0244); inflation median 1.6
+
+LRT  λ_LR=696.74  p=0.0000  reject_null=True  [chi2]
+
+Measuring w(θ) …
+Template correlations from 2,743,690 galaxies (15,548 outside the footprint), at most 1,000,000
+All-method weights saved: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_NSIDE0032_WEIGHTS.fits
+Params saved: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_NSIDE0032_params.json
+Plot saved: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_NSIDE0032_wtheta.png
+w(θ) data saved: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_NSIDE0032_wtheta_data.json
+Plot saved: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_NSIDE0032_weight_map.png
+Plot saved: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_NSIDE0032_weight_hist.png
+
+Summary written: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/summary_NSIDE0032.yaml

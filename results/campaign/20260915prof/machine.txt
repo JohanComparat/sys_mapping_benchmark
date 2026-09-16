@@ -1,0 +1,7 @@
+host=dahu114
+ncore=8
+start=2026-09-15T21:09:25+02:00
+model name	: Intel(R) Xeon(R) Gold 5218 CPU @ 2.30GHz
+loadavg_start=22.36 22.07 22.32
+end=2026-09-15T21:22:08+02:00
+loadavg_end=43.87 44.04 34.18

@@ -33,3 +33,6 @@ results/campaign/*/simulations/
 results/campaign/*/benchmarks/
 results/campaign/*/ls10_mocklrt/
 results/campaign/*/logs/
+
+# Weight products a profile or check run leaves behind; they are regenerated, not published.
+results/**/*_WEIGHTS.fits

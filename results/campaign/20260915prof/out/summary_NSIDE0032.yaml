@@ -1,0 +1,8 @@
+nside: 32
+samples:
+- data_file: /home/comparaj/data/legacysurvey/dr10/sweep/BGS_VLIM_Mstar/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_DATA.fits
+  nside: 32
+  params_file: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_NSIDE0032_params.json
+  rand_file: /home/comparaj/data/legacysurvey/dr10/sweep/BGS_VLIM_Mstar/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_RAND.fits
+  sample_id: LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238
+  weights_file: /bettik/PROJECTS/pr-orphans/comparaj/sys_mapping_benchmark/results/profile/20260915prof/out/LS10_VLIM_ANY_10.0_Mstar_12.0_0.05_z_0.18_N_2759238_NSIDE0032_WEIGHTS.fits
