@@ -264,7 +264,8 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
                    cl_target, nbar_target, *, lmax, l_large=32, n_seeds=8,
                    tol=0.10, tol_density=0.03, seed0=990001, band=None,
                    dens_nside=None, dens_nbar_target=None,
-                   dens_mask=None, verbose=True):
+                   dens_mask=None, mock_counts=None, dens_counts=None,
+                   verbose=True):
     """Does a matched spectrum actually reproduce the data's large-scale power?
 
     Run BEFORE a mock is used for anything.  The matching loop optimises against
@@ -281,6 +282,14 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
     over l = 2..32 there are ~1085 modes and the floor is ~2 per cent, so a
     10 per cent gate measures the mock rather than the noise.
 
+    ``mock_counts(cl_in, seed)`` and ``dens_counts(cl_in, seed)``, when given,
+    replace the count model: they return the mock's full-sky count map at
+    ``nside`` and at ``dens_nside``.  A survey whose mocks cannot be generated as
+    catalogues -- Euclid TR1, where one full-sky realisation is 1.6e8 positions
+    -- supplies its own and reuses everything else here.  Left at ``None``, the
+    LS10 path runs unchanged: one GLASS catalogue per seed, pixelised at both
+    resolutions.
+
     Returns a dict with ``passed`` --- use the spectrum only if it is True.
     """
     lo, hi = band if band is not None else (2, int(min(l_large, lmax)))
@@ -294,18 +303,29 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
 
     cls, sigs, nbars = [], [], []
     for k in range(n_seeds):
-        cat = sm.generate_glass_fullsky_mock(nside, n_total, z_edges, nz,
-                                             seed=seed0 + k, rand_factor=2,
-                                             cl_input=cl_fit)
-        ng = sm.pixelize_catalog(cat["ra"], cat["dec"], nside)
+        if mock_counts is None:
+            cat = sm.generate_glass_fullsky_mock(nside, n_total, z_edges, nz,
+                                                 seed=seed0 + k, rand_factor=2,
+                                                 cl_input=cl_fit)
+            ng = sm.pixelize_catalog(cat["ra"], cat["dec"], nside)
+        else:
+            ng = np.asarray(mock_counts(cl_fit, seed0 + k), dtype=float)
         cl_m, nbar_m, _, _ = measure_signal_cl(ng, mock_randoms, nside, lmax)
         dm, _g = sm.compute_overdensity(ng, mock_randoms)
         cls.append(cl_m); sigs.append(float(np.std(np.asarray(dm))))
         if dens_nside is not None:
             # Density on its own, coarser map: the same galaxies, binned so the
             # estimate is a measurement rather than a count of a handful.
-            ngd = np.asarray(sm.pixelize_catalog(cat["ra"], cat["dec"],
-                                                 dens_nside), float)
+            if mock_counts is None:
+                ngd = np.asarray(sm.pixelize_catalog(cat["ra"], cat["dec"],
+                                                     dens_nside), float)
+            elif dens_counts is not None:
+                ngd = np.asarray(dens_counts(cl_fit, seed0 + k), dtype=float)
+            else:
+                raise ValueError(
+                    "dens_nside asks for the density on a coarser map, but the "
+                    "count model given in mock_counts has no dens_counts to "
+                    "produce it")
             nbars.append(float(ngd[dens_mask].mean()))
         else:
             nbars.append(nbar_m)
@@ -353,9 +373,16 @@ def validate_match(cl_fit, nside, n_total, z_edges, nz, mock_randoms,
 def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
           sigma_data=None,
           *, lmax, edges, n_iter, n_seeds, damping, tol_cl, tol_density,
-          cl_start=None, seed0=101, lmax_match=None,
+          cl_start=None, seed0=101, lmax_match=None, mock_counts=None,
           burn_in_factor=3.0, verbose=True):
-    """Iterate the input spectrum until mock and data agree on both statistics."""
+    """Iterate the input spectrum until mock and data agree on both statistics.
+
+    ``mock_counts(cl_in, seed)`` replaces the count model with a callable
+    returning the mock's full-sky count map at ``nside``, so a survey that cannot
+    afford a catalogue realisation reuses this iteration with its own draw.  At
+    ``None`` the LS10 path runs unchanged: one GLASS catalogue per seed,
+    pixelised.
+    """
     # The input spectrum lives on GLASS's grid (l <= 3*nside), which is longer
     # than the grid the match is measured on.
     cl_in = (sanitise_cl(cl_start, 3 * nside) if cl_start is not None
@@ -382,10 +409,14 @@ def match(nside, n_total, z_edges, nz, mock_randoms, cl_target, nbar_target,
     for it in range(n_iter):
         cls, nbars, sigs = [], [], []
         for k in range(n_seeds):
-            cat = sm.generate_glass_fullsky_mock(
-                nside, n_total, z_edges, nz, seed=seed0 + 1000 * it + k,
-                rand_factor=2, cl_input=cl_in)
-            ng = sm.pixelize_catalog(cat["ra"], cat["dec"], nside)
+            if mock_counts is None:
+                cat = sm.generate_glass_fullsky_mock(
+                    nside, n_total, z_edges, nz, seed=seed0 + 1000 * it + k,
+                    rand_factor=2, cl_input=cl_in)
+                ng = sm.pixelize_catalog(cat["ra"], cat["dec"], nside)
+            else:
+                ng = np.asarray(mock_counts(cl_in, seed0 + 1000 * it + k),
+                                dtype=float)
             # Same footprint as the data, but a UNIFORM expectation inside it:
             # the mock carries no angular selection, so normalising it against
             # the data's randoms would imprint the survey's selection on it.
