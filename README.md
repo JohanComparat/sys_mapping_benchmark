@@ -1,9 +1,6 @@
 # sys_mapping_benchmark
 
-Timing benchmarks and algorithm characterisation for
-[`sys_mapping`](https://github.com/JohanComparat/sys_mapping).
-
-`sys_mapping_benchmark` times the `sys_mapping` pipeline and characterises its algorithms on simulations.
+`sys_mapping_benchmark` times the [`sys_mapping`](https://github.com/JohanComparat/sys_mapping) pipeline and characterises its algorithms on simulations.
 It writes the results under `results/`, and the [`sys_mapping` documentation](https://sys-mapping.readthedocs.io) presents them.
 It is kept separate from the package so that the CI of `sys_mapping` does not carry 259 timing cases, and so that these measurements can be run and cited independently.
 
@@ -56,11 +53,12 @@ The four scripts give the following results.
   Over 180 cells, the rank correlation with the improvement factor is +0.73, and the rule is right 79% of the time.
   Below break-even, applying weights makes `w(θ)` worse.
 - Variance inflation.
-  On a clustered field the iid pixel error is 3–18× too tight, giving a 3σ false-positive rate of 76–100% where 0.27% is expected.
+  On a clustered field the iid pixel error is too small by a factor κ of 3.2–13.1 (median over the 11 templates; 5.0–18.9 for the whole field).
+  The 3σ false-positive rate is then 34–65% per template, where 0.27% is expected, and 99–100% for at least one template, where 2.9% is expected.
   A pure-Poisson control returns κ ≈ 1.
-  κ depends strongly on the assumed `C_ℓ` slope (3.2 at −1.5, 13.1 at −4.0), so it must be quoted with the spectrum it was measured on.
+  κ grows with the steepness of the assumed `C_ℓ` (3.2 at a slope of −1.5, 13.1 at −4.0), so it must be quoted with the spectrum it was measured on.
 - Cross-terms.
-  The auto-only two-point correction carries a 7–17% error in the PCA-rotated basis the pipeline uses, and a factor 14–20 in the unrotated basis.
+  At NSIDE 32, the auto-only two-point correction carries a median error of 5–21% in the PCA-rotated basis the pipeline uses, and of a factor 15–23 in the unrotated basis.
   The rotation is therefore needed by the correction, not only by the mixing of the MCMC chains.
 - Clustering of the GLASS mocks.
   The default `cl_amplitude=5e-4` gives σ_clus = 0.078 against 0.387 for LS10, 25× too little clustering variance, while matching the shot noise exactly.
